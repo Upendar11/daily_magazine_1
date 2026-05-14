@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Python File Handling — Field Manual</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Source+Sans+3:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --paper: #faf8f3;
+      --ink: #1c1a17;
+      --muted: #6b6660;
+      --divider: #dbd7cf;
+      --accent-earth: #8B4513;
+      --accent-cool: #2c5f8a;
+      --accent-hot: #d94e1a;
+      --code-bg: #161412;
+      --code-fg: #e8e2d9;
+      --code-green: #98c379;
+      --code-yellow: #e5c07b;
+      --code-blue: #61afef;
+      --code-red: #e06c75;
+      --code-comment: #666;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: 'Source Sans 3', sans-serif;
+      font-size: 17px;
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* ─── LOADER ─── */
+    #loader {
+      position: fixed; inset: 0; background: var(--ink);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999; transition: opacity 0.6s ease;
+    }
+    #loader.hide { opacity: 0; pointer-events: none; }
+    .loader-text {
+      color: var(--paper); font-family: 'Playfair Display', serif;
+      font-size: 1.4rem; letter-spacing: 0.3em; text-transform: uppercase;
+      animation: blink 1s ease infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    /* ─── MASTHEAD ─── */
+    .masthead {
+      border-bottom: 3px double var(--ink);
+      padding: 28px 0 18px;
+      text-align: center;
+      position: relative;
+    }
+    .masthead-overline {
+      font-size: 0.72rem; letter-spacing: 0.35em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 8px;
+    }
+    .masthead-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 5vw, 3.8rem);
+      font-weight: 900; line-height: 1.05; letter-spacing: -0.02em;
+    }
+    .masthead-title em { color: var(--accent-earth); font-style: italic; }
+    .masthead-deck {
+      margin-top: 10px; font-size: 0.95rem; color: var(--muted);
+      font-weight: 300; letter-spacing: 0.04em;
+    }
+    .masthead-meta {
+      margin-top: 14px; font-size: 0.72rem; letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--divider);
+      border-top: 1px solid var(--divider); padding-top: 12px;
+    }
+
+    /* ─── CHAPTER NAV ─── */
+    .chapter-nav {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--ink); display: flex; justify-content: center;
+      gap: 0; border-bottom: 2px solid var(--accent-earth);
+    }
+    .chap-btn {
+      background: none; border: none; color: var(--divider);
+      font-family: 'Source Sans 3', sans-serif;
+      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.2em;
+      text-transform: uppercase; padding: 14px 28px; cursor: pointer;
+      position: relative; transition: color 0.25s;
+    }
+    .chap-btn::after {
+      content: ''; position: absolute; bottom: 0; left: 50%; right: 50%;
+      height: 3px; background: var(--accent-earth);
+      transition: left 0.25s, right 0.25s;
+    }
+    .chap-btn.active { color: #fff; }
+    .chap-btn.active::after { left: 0; right: 0; }
+    .chap-btn:hover { color: #fff; }
+
+    /* ─── CHAPTER PAGES ─── */
+    .chapter-page { display: none; animation: fadeIn 0.4s ease; }
+    .chapter-page.active { display: block; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+
+    /* ─── LAYOUT ─── */
+    .container { max-width: 860px; margin: 0 auto; padding: 0 28px; }
+    .wide-container { max-width: 1040px; margin: 0 auto; padding: 0 28px; }
+
+    /* ─── HERO BAND ─── */
+    .hero-band {
+      padding: 64px 0 48px;
+      border-bottom: 1px solid var(--divider);
+    }
+    .chapter-label {
+      font-size: 0.7rem; letter-spacing: 0.35em; text-transform: uppercase;
+      color: var(--accent-earth); font-weight: 700; margin-bottom: 16px;
+      display: block;
+    }
+    .hero-headline {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 4.5vw, 3.2rem);
+      font-weight: 900; line-height: 1.1;
+      max-width: 640px;
+    }
+    .hero-headline em { color: var(--accent-cool); font-style: italic; }
+    .hero-intro {
+      margin-top: 20px; font-size: 1.1rem; color: var(--muted);
+      max-width: 560px; font-weight: 300; line-height: 1.6;
+    }
+    .section-count {
+      display: inline-block; margin-top: 20px;
+      font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--muted); border: 1px solid var(--divider);
+      padding: 4px 12px; border-radius: 2px;
+    }
+
+    /* ─── ARTICLE SECTION ─── */
+    .article-section {
+      padding: 52px 0 40px;
+      border-bottom: 1px solid var(--divider);
+    }
+    .article-section:last-child { border-bottom: none; }
+
+    .section-kicker {
+      font-size: 0.68rem; letter-spacing: 0.3em; text-transform: uppercase;
+      color: var(--accent-earth); font-weight: 700; margin-bottom: 12px;
+    }
+    .section-headline {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.4rem, 3vw, 2rem);
+      font-weight: 700; line-height: 1.2; margin-bottom: 20px;
+    }
+    .section-body {
+      font-size: 1rem; line-height: 1.8; color: var(--ink); max-width: 680px;
+    }
+    .section-body p { margin-bottom: 1.1em; }
+    .section-body strong { font-weight: 700; }
+    .section-body code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85em; background: rgba(0,0,0,0.06);
+      padding: 1px 6px; border-radius: 3px; color: var(--accent-earth);
+    }
+
+    /* ─── PULL QUOTE ─── */
+    .pull-quote {
+      margin: 36px 0;
+      padding: 24px 28px 24px 32px;
+      border-left: 4px solid var(--accent-earth);
+      background: rgba(139,69,19,0.05);
+    }
+    .pull-quote p {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.1rem, 2.5vw, 1.35rem);
+      font-style: italic; line-height: 1.5; color: var(--ink);
+    }
+    .pull-quote cite {
+      display: block; margin-top: 8px;
+      font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--muted); font-style: normal;
+    }
+
+    /* ─── CODE BLOCK ─── */
+    .code-block {
+      background: var(--code-bg);
+      border-radius: 6px; overflow: hidden;
+      margin: 24px 0; box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    .code-header {
+      background: #0d0b09; padding: 10px 18px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .code-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .cd-r { background: #ff5f57; }
+    .cd-y { background: #febc2e; }
+    .cd-g { background: #28c840; }
+    .code-filename {
+      margin-left: auto; font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem; color: #555; letter-spacing: 0.05em;
+    }
+    .code-block pre {
+      padding: 20px 22px; overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem; line-height: 1.7;
+      color: var(--code-fg);
+    }
+    .ck { color: var(--code-blue); }    /* keyword */
+    .cs { color: var(--code-green); }   /* string */
+    .cc { color: var(--code-comment); font-style: italic; } /* comment */
+    .cm { color: var(--code-yellow); }  /* method/var */
+    .ce { color: var(--code-red); }     /* error/warning */
+    .cn { color: #d19a66; }             /* number */
+
+    /* ─── MODE TABLE ─── */
+    .mode-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 16px; margin: 28px 0;
+    }
+    .mode-card {
+      border: 1px solid var(--divider); border-radius: 6px;
+      padding: 18px; position: relative; overflow: hidden;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .mode-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.1); transform: translateY(-2px); }
+    .mode-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    }
+    .mode-r::before { background: var(--accent-cool); }
+    .mode-w::before { background: var(--accent-hot); }
+    .mode-a::before { background: #5a9e6f; }
+    .mode-x::before { background: #9b59b6; }
+    .mode-b::before { background: var(--muted); }
+    .mode-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.5rem; font-weight: 700; color: var(--ink);
+      margin-bottom: 8px;
+    }
+    .mode-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; }
+    .mode-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+    .mode-danger {
+      margin-top: 10px; font-size: 0.75rem; color: var(--accent-hot);
+      font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em;
+    }
+
+    /* ─── WARNING BOX ─── */
+    .warn-box {
+      background: rgba(217,78,26,0.07);
+      border: 1px solid rgba(217,78,26,0.3);
+      border-radius: 6px; padding: 18px 22px; margin: 24px 0;
+      display: flex; gap: 14px; align-items: flex-start;
+    }
+    .warn-icon { font-size: 1.4rem; flex-shrink: 0; margin-top: 1px; }
+    .warn-content strong {
+      display: block; font-size: 0.78rem; letter-spacing: 0.15em;
+      text-transform: uppercase; color: var(--accent-hot); margin-bottom: 4px;
+    }
+    .warn-content p { font-size: 0.92rem; color: var(--ink); line-height: 1.6; }
+
+    /* ─── TIP BOX ─── */
+    .tip-box {
+      background: rgba(44,95,138,0.07);
+      border: 1px solid rgba(44,95,138,0.25);
+      border-radius: 6px; padding: 18px 22px; margin: 24px 0;
+      display: flex; gap: 14px; align-items: flex-start;
+    }
+    .tip-icon { font-size: 1.4rem; flex-shrink: 0; }
+    .tip-content strong {
+      display: block; font-size: 0.78rem; letter-spacing: 0.15em;
+      text-transform: uppercase; color: var(--accent-cool); margin-bottom: 4px;
+    }
+    .tip-content p { font-size: 0.92rem; color: var(--ink); line-height: 1.6; }
+
+    /* ─── READ PATTERNS ─── */
+    .pattern-list { list-style: none; margin: 20px 0; }
+    .pattern-list li {
+      display: flex; align-items: baseline; gap: 14px;
+      padding: 12px 0; border-bottom: 1px solid var(--divider);
+      font-size: 0.95rem;
+    }
+    .pattern-list li:last-child { border-bottom: none; }
+    .pattern-tag {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;
+      background: var(--ink); color: var(--paper);
+      padding: 2px 8px; border-radius: 3px; white-space: nowrap; flex-shrink: 0;
+    }
+    .pattern-desc { color: var(--muted); }
+    .pattern-best { color: var(--accent-earth); font-weight: 700; }
+
+    /* ─── TWO-COL ─── */
+    .two-col {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 28px;
+      margin: 28px 0;
+    }
+    @media (max-width: 600px) { .two-col { grid-template-columns: 1fr; } }
+    .col-card {
+      border: 1px solid var(--divider); border-radius: 6px; padding: 22px;
+    }
+    .col-card-title {
+      font-family: 'Playfair Display', serif; font-size: 1rem;
+      font-weight: 700; margin-bottom: 12px; padding-bottom: 10px;
+      border-bottom: 1px solid var(--divider);
+    }
+    .col-card ul { list-style: none; }
+    .col-card ul li { padding: 6px 0; font-size: 0.9rem; border-bottom: 1px dashed var(--divider); }
+    .col-card ul li:last-child { border: none; }
+    .col-card ul li span { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--accent-cool); }
+
+    /* ─── GOLDEN RULES ─── */
+    .golden-rules-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 18px; margin: 28px 0;
+    }
+    .rule-card {
+      border-radius: 6px; padding: 22px; position: relative;
+      background: var(--ink); color: var(--paper);
+      transition: transform 0.2s;
+    }
+    .rule-card:hover { transform: translateY(-3px); }
+    .rule-number {
+      font-family: 'Playfair Display', serif;
+      font-size: 3rem; font-weight: 900; color: rgba(255,255,255,0.08);
+      position: absolute; top: 10px; right: 16px; line-height: 1;
+    }
+    .rule-icon { font-size: 1.6rem; margin-bottom: 12px; }
+    .rule-title { font-weight: 700; font-size: 0.9rem; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; color: var(--accent-earth); }
+    .rule-text { font-size: 0.88rem; line-height: 1.6; color: rgba(255,255,255,0.75); }
+    .rule-code { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 3px; }
+
+    /* ─── RECALL CARD ─── */
+    .recall-card {
+      background: var(--ink); color: var(--paper);
+      border-radius: 8px; padding: 40px; margin: 48px 0;
+      position: relative; overflow: hidden;
+    }
+    .recall-card::before {
+      content: '◈'; position: absolute; right: 30px; top: 20px;
+      font-size: 8rem; color: rgba(255,255,255,0.04);
+      font-family: serif; line-height: 1;
+    }
+    .recall-badge {
+      display: inline-block; background: var(--accent-earth);
+      color: #fff; font-size: 0.65rem; letter-spacing: 0.25em;
+      text-transform: uppercase; padding: 4px 12px; border-radius: 2px;
+      margin-bottom: 20px; font-weight: 700;
+    }
+    .recall-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 900;
+      margin-bottom: 12px; line-height: 1.2;
+    }
+    .recall-hook {
+      background: rgba(255,255,255,0.06); border-left: 3px solid var(--accent-earth);
+      padding: 16px 20px; margin: 20px 0; border-radius: 0 4px 4px 0;
+    }
+    .recall-hook p {
+      font-family: 'Playfair Display', serif; font-style: italic;
+      font-size: 1.1rem; line-height: 1.5; color: rgba(255,255,255,0.9);
+    }
+    .recall-section-label {
+      font-size: 0.68rem; letter-spacing: 0.3em; text-transform: uppercase;
+      color: var(--accent-earth); font-weight: 700; margin: 24px 0 10px;
+    }
+    .recall-questions { list-style: none; }
+    .recall-questions li {
+      padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.07);
+      font-size: 0.95rem; color: rgba(255,255,255,0.8); display: flex; gap: 10px;
+    }
+    .recall-questions li::before { content: '→'; color: var(--accent-earth); flex-shrink: 0; }
+    .recall-belief {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 12px 0;
+    }
+    @media (max-width:560px) { .recall-belief { grid-template-columns: 1fr; } }
+    .belief-before, .belief-after {
+      padding: 14px; border-radius: 4px; font-size: 0.88rem; line-height: 1.55;
+    }
+    .belief-before { background: rgba(217,78,26,0.15); border: 1px solid rgba(217,78,26,0.3); }
+    .belief-after  { background: rgba(90,158,111,0.15); border: 1px solid rgba(90,158,111,0.3); }
+    .belief-label { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 6px; font-weight: 700; }
+    .belief-before .belief-label { color: #e06c75; }
+    .belief-after  .belief-label { color: #98c379; }
+    .recall-keys { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0; }
+    .recall-key {
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 3px; padding: 5px 12px;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+      color: var(--code-yellow);
+    }
+    .recall-warn {
+      background: rgba(217,78,26,0.12); border: 1px solid rgba(217,78,26,0.3);
+      border-radius: 4px; padding: 14px 18px; margin: 16px 0;
+      font-size: 0.9rem; color: rgba(255,255,255,0.85); line-height: 1.55;
+    }
+    .recall-schedule {
+      display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0;
+    }
+    .sched-item {
+      border: 1px solid rgba(255,255,255,0.2); border-radius: 3px;
+      padding: 6px 14px; font-size: 0.8rem; color: rgba(255,255,255,0.6);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .sched-item::before { content: '☐'; font-size: 1rem; }
+    .recall-teach {
+      background: rgba(255,255,255,0.04); border-radius: 4px;
+      padding: 16px 20px; margin: 12px 0;
+      font-style: italic; font-size: 0.95rem;
+      color: rgba(255,255,255,0.8); line-height: 1.6;
+    }
+
+    /* ─── PENDING BADGE ─── */
+    .pending-section {
+      padding: 36px 0; border-top: 1px solid var(--divider);
+    }
+    .pending-grid {
+      display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px;
+    }
+    .pending-chip {
+      border: 1px dashed var(--divider); border-radius: 3px;
+      padding: 6px 14px; font-size: 0.8rem; color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ─── FOOTER ─── */
+    .page-footer {
+      border-top: 3px double var(--ink); padding: 28px 0;
+      text-align: center; margin-top: 60px;
+    }
+    .page-footer p { font-size: 0.75rem; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; }
+
+    /* ─── HISTORY SIDEBAR ─── */
+    #history-drawer { position:fixed; top:0; left:-290px; width:290px; height:100vh; background:#111; color:#fff; overflow-y:auto; transition:left 0.3s ease; z-index:9999; padding:24px 20px; box-sizing:border-box; }
+    #history-drawer.open { left:0; }
+    #history-toggle { position:fixed; top:50%; left:0; transform:translateY(-50%); background:#111; color:#fff; padding:12px 6px; cursor:pointer; z-index:10000; border-radius:0 6px 6px 0; font-size:11px; writing-mode:vertical-rl; letter-spacing:2px; border: 1px solid rgba(255,255,255,0.1); border-left: none; }
+    #history-drawer h3 { margin:0 0 18px; font-size:12px; text-transform:uppercase; letter-spacing:3px; border-bottom:1px solid #333; padding-bottom:12px; font-family:'Source Sans 3',sans-serif; }
+    .history-item { margin-bottom:16px; }
+    .history-item a { color:#e5c07b; text-decoration:none; font-size:13px; font-weight:600; display:block; font-family:'Source Sans 3',sans-serif; }
+    .history-item a:hover { color:#f0d08c; }
+    .history-item span { font-size:11px; color:#666; }
+    #history-close { float:right; cursor:pointer; font-size:18px; color:#555; line-height:1; }
+    #history-close:hover { color:#aaa; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader"><div class="loader-text">Loading Field Manual…</div></div>
+
+<!-- HISTORY SIDEBAR -->
+<div id="history-toggle" onclick="document.getElementById('history-drawer').classList.toggle('open')">📰 History</div>
+<div id="history-drawer">
+  <h3>Past Issues <span id="history-close" onclick="document.getElementById('history-drawer').classList.remove('open')">✕</span></h3>
+  <div id="history-list"></div>
+</div>
+
+<!-- MASTHEAD -->
+<header>
+  <div class="container">
+    <div class="masthead">
+      <p class="masthead-overline">The Recall Field Manual · Python Series</p>
+      <h1 class="masthead-title">Python <em>File Handling</em></h1>
+      <p class="masthead-deck">Sections 0 through 7 · From raw descriptors to encoding traps — everything you need to open, read, write, and close files with confidence.</p>
+      <p class="masthead-meta">Issue Date: May 13, 2026 &nbsp;·&nbsp; Reporter: Upendar &nbsp;·&nbsp; Sections Covered: 8 of 17</p>
+    </div>
+  </div>
+</header>
+
+<!-- CHAPTER NAV -->
+<nav class="chapter-nav" role="navigation" aria-label="Chapter navigation">
+  <button class="chap-btn active" onclick="showChapter(0)" id="btn-0">Ⅰ · The Foundation</button>
+  <button class="chap-btn" onclick="showChapter(1)" id="btn-1">Ⅱ · The Patterns</button>
+  <button class="chap-btn" onclick="showChapter(2)" id="btn-2">Ⅲ · Details & Recall</button>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- CHAPTER I — THE FOUNDATION                                   -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="chapter-page active" id="chapter-0">
+  <div class="container">
+
+    <!-- Hero -->
+    <div class="hero-band">
+      <span class="chapter-label">Chapter I — The Foundation</span>
+      <h2 class="hero-headline">The Mental Model &amp; <em>File Modes</em></h2>
+      <p class="hero-intro">Before you type a single line of file code, you need the right picture in your head: what a file actually is, why closing matters, and what each mode does to your data.</p>
+      <span class="section-count">Covers § 0 · § 1 · § 2</span>
+    </div>
+
+    <!-- §0 Mental Model -->
+    <div class="article-section">
+      <p class="section-kicker">§ 0 — Mental Model</p>
+      <h3 class="section-headline">A File Is a Pipe, Not a Room</h3>
+      <div class="section-body">
+        <p>Most beginners picture a file as a room — you walk in, grab what you want, walk out. The accurate picture is a <strong>pipe connected to a descriptor</strong>: the operating system hands you a numbered slot (a file descriptor) and routes everything through it.</p>
+        <p>Python wraps that descriptor in a file object and gives you methods. But the OS has a hard limit — roughly <strong>1,024 open descriptors per process</strong>. Leave files open and you hit <code>OSError: Too many open files</code>.</p>
+        <p>There's a second danger: writes don't go straight to disk. They sit in a buffer — like cash on your desk instead of in the bank. Until <code>close()</code> is called, that buffer may never be flushed. The file on disk is incomplete, as if a transaction was never committed.</p>
+      </div>
+
+      <div class="pull-quote">
+        <p>"A file is a sequence of bytes accessed through a file descriptor. You MUST close it — or the OS runs out of pipes and your data stays in limbo."</p>
+        <cite>§ 0 — Mental Model</cite>
+      </div>
+
+      <div class="two-col">
+        <div class="col-card">
+          <p class="col-card-title">Danger 1 — Descriptor Leak</p>
+          <ul>
+            <li>OS limit: <span>~1,024 open files</span></li>
+            <li>Symptom: <span>OSError: Too many open files</span></li>
+            <li>Fix: <span>Always close()</span></li>
+          </ul>
+        </div>
+        <div class="col-card">
+          <p class="col-card-title">Danger 2 — Unflushed Buffer</p>
+          <ul>
+            <li>Writes go to buffer first</li>
+            <li>Disk only updated on <span>close() / flush()</span></li>
+            <li>Unflushed = data is <span>lost on crash</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- §1-2 File Modes -->
+    <div class="article-section">
+      <p class="section-kicker">§ 1 &amp; 2 — open() and File Modes</p>
+      <h3 class="section-headline">Every Mode Is a Contract</h3>
+      <div class="section-body">
+        <p>When you call <code>open()</code>, you make a contract with the OS. The mode argument tells it what you intend to do — and the OS enforces it. Get the mode wrong and you silently erase data or corrupt a binary file.</p>
+      </div>
+
+      <div class="mode-grid">
+        <div class="mode-card mode-r">
+          <div class="mode-label">'r'</div>
+          <div class="mode-title">Read Only</div>
+          <div class="mode-desc">Opens an existing file for reading. Raises <code>FileNotFoundError</code> if the file doesn't exist. Nothing is created or changed.</div>
+        </div>
+        <div class="mode-card mode-w">
+          <div class="mode-label">'w'</div>
+          <div class="mode-title">Write (Overwrite)</div>
+          <div class="mode-desc">Creates the file if needed, <strong>erases all existing content silently</strong> if it does exist. Use with caution.</div>
+          <div class="mode-danger">⚠ Erases existing content</div>
+        </div>
+        <div class="mode-card mode-a">
+          <div class="mode-label">'a'</div>
+          <div class="mode-title">Append</div>
+          <div class="mode-desc">Opens for writing, but preserves existing content and adds new data at the end. Safe for logs and growing files.</div>
+        </div>
+        <div class="mode-card mode-x">
+          <div class="mode-label">'x'</div>
+          <div class="mode-title">Exclusive Create</div>
+          <div class="mode-desc">Creates a new file. Raises <code>FileExistsError</code> if the file already exists. The safest way to avoid accidental overwrites.</div>
+          <div class="mode-danger">🛡 Fails safely if file exists</div>
+        </div>
+        <div class="mode-card mode-b">
+          <div class="mode-label">'b'</div>
+          <div class="mode-title">Binary Suffix</div>
+          <div class="mode-desc">Append to any mode: <code>'rb'</code>, <code>'wb'</code>. Returns bytes instead of str. Required for images, PDFs, ZIPs — anything that isn't plain text.</div>
+          <div class="mode-danger">🖼 Images need 'b'</div>
+        </div>
+        <div class="mode-card mode-b">
+          <div class="mode-label">'t'</div>
+          <div class="mode-title">Text Suffix (Default)</div>
+          <div class="mode-desc">The default mode. Returns str, translates line endings. Omitting it is the same as writing <code>'rt'</code> or <code>'wt'</code>.</div>
+        </div>
+      </div>
+
+      <div class="section-body">
+        <p>The <strong>'x' pattern with error handling</strong> is your guard against overwriting outputs you don't want to lose:</p>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dot cd-r"></div><div class="code-dot cd-y"></div><div class="code-dot cd-g"></div>
+          <span class="code-filename">safe_create.py</span>
+        </div>
+        <pre><span class="cc"># Safe create — never overwrite</span>
+<span class="ck">try</span>:
+    <span class="ck">with</span> <span class="cm">open</span>(<span class="cs">"report.txt"</span>, <span class="cs">"x"</span>) <span class="ck">as</span> f:
+        f.<span class="cm">write</span>(<span class="cs">"Analysis complete\n"</span>)
+<span class="ck">except</span> <span class="ce">FileExistsError</span>:
+    <span class="cm">print</span>(<span class="cs">"File already exists — skipping"</span>)
+
+<span class="cc"># Other key examples</span>
+<span class="cm">open</span>(<span class="cs">"log.txt"</span>,    <span class="cs">"a"</span>)   <span class="cc"># append without overwriting</span>
+<span class="cm">open</span>(<span class="cs">"image.png"</span>,  <span class="cs">"rb"</span>)  <span class="cc"># binary read (images need 'b')</span>
+<span class="cm">open</span>(<span class="cs">"output.txt"</span>, <span class="cs">"w"</span>,  encoding=<span class="cs">"utf-8"</span>)  <span class="cc"># write with encoding</span></pre>
+      </div>
+
+      <div class="warn-box">
+        <span class="warn-icon">⚠️</span>
+        <div class="warn-content">
+          <strong>The 'w' Trap</strong>
+          <p><code>'w'</code> mode erases the file the instant you open it — before you write a single byte. There is no undo. If you meant to append, use <code>'a'</code>. If you want to fail safely rather than overwrite, use <code>'x'</code>.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div><!-- end chapter-0 -->
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- CHAPTER II — THE PATTERNS                                    -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="chapter-page" id="chapter-1">
+  <div class="container">
+
+    <div class="hero-band">
+      <span class="chapter-label">Chapter II — The Patterns</span>
+      <h2 class="hero-headline">Context Manager, <em>Reading &amp; Writing</em></h2>
+      <p class="hero-intro">The <code>with</code> statement is the single most important pattern in file handling. Layer on top of it the five reading strategies and the three writing methods, and you can handle almost any file task correctly.</p>
+      <span class="section-count">Covers § 3 · § 4 · § 5</span>
+    </div>
+
+    <!-- §3 Context Manager -->
+    <div class="article-section">
+      <p class="section-kicker">§ 3 — Context Manager</p>
+      <h3 class="section-headline">The <code>with</code> Statement: Your Safety Net</h3>
+      <div class="section-body">
+        <p>The context manager is Python's answer to "what if an error happens before I call close()?" It guarantees the file is closed regardless — success or exception. Think of it as a try/finally block that Python writes for you, invisibly.</p>
+      </div>
+
+      <div class="pull-quote">
+        <p>"<code>with open(…)</code> is not a style choice. It is the correct way to open files. Every other way is a bug waiting for bad luck."</p>
+        <cite>§ 3 — Context Manager</cite>
+      </div>
+
+      <div class="two-col">
+        <div class="col-card">
+          <p class="col-card-title" style="color:var(--accent-hot)">❌ Wrong Way</p>
+          <div class="code-block" style="margin:0">
+            <pre style="font-size:0.77rem">f = <span class="cm">open</span>(<span class="cs">"file.txt"</span>)
+data = f.<span class="cm">read</span>()
+<span class="cc"># If read() crashes,</span>
+<span class="cc"># close() is never called</span>
+f.<span class="cm">close</span>()</pre>
+          </div>
+        </div>
+        <div class="col-card">
+          <p class="col-card-title" style="color:#5a9e6f">✅ Right Way</p>
+          <div class="code-block" style="margin:0">
+            <pre style="font-size:0.77rem"><span class="ck">with</span> <span class="cm">open</span>(<span class="cs">"file.txt"</span>) <span class="ck">as</span> f:
+    data = f.<span class="cm">read</span>()
+<span class="cc"># Closed automatically here,</span>
+<span class="cc"># even if read() raised</span></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-body" style="margin-top:24px">
+        <p>You can open multiple files in one <code>with</code> statement — useful for copy operations:</p>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dot cd-r"></div><div class="code-dot cd-y"></div><div class="code-dot cd-g"></div>
+          <span class="code-filename">multi_file.py</span>
+        </div>
+        <pre><span class="cc"># Both files closed automatically, even on error</span>
+<span class="ck">with</span> <span class="cm">open</span>(<span class="cs">"in.txt"</span>) <span class="ck">as</span> src, <span class="cm">open</span>(<span class="cs">"out.txt"</span>, <span class="cs">"w"</span>) <span class="ck">as</span> dst:
+    dst.<span class="cm">write</span>(src.<span class="cm">read</span>())</pre>
+      </div>
+    </div>
+
+    <!-- §4 Reading -->
+    <div class="article-section">
+      <p class="section-kicker">§ 4 — Reading Text</p>
+      <h3 class="section-headline">Five Ways to Read — One Winner</h3>
+      <div class="section-body">
+        <p>Python gives you five reading patterns. For most real-world work — especially large files — only one is appropriate. Knowing which to pick prevents memory exhaustion and hard-to-debug bugs.</p>
+      </div>
+
+      <ul class="pattern-list">
+        <li>
+          <span class="pattern-tag">f.read()</span>
+          <span class="pattern-desc">Entire file as one big string. Loads everything into memory. Fine for small files, dangerous for large ones.</span>
+        </li>
+        <li>
+          <span class="pattern-tag">f.readline()</span>
+          <span class="pattern-desc">One line per call. You control iteration manually. Rarely needed — the <code>for</code> loop is cleaner.</span>
+        </li>
+        <li>
+          <span class="pattern-tag">f.readlines()</span>
+          <span class="pattern-desc">Returns a list of all lines. Loads everything into memory. Same caveat as <code>.read()</code> — avoid on large files.</span>
+        </li>
+        <li>
+          <span class="pattern-tag">for line in f</span>
+          <span class="pattern-desc pattern-best">★ BEST for large files. Python streams one line at a time — constant memory, no matter how big the file.</span>
+        </li>
+        <li>
+          <span class="pattern-tag">f.read(n)</span>
+          <span class="pattern-desc">Read exactly <code>n</code> characters. Used for binary chunking or fixed-width parsing.</span>
+        </li>
+      </ul>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dot cd-r"></div><div class="code-dot cd-y"></div><div class="code-dot cd-g"></div>
+          <span class="code-filename">filter_names.py</span>
+        </div>
+        <pre><span class="cc"># Filter names containing 'a' — streaming, memory-safe</span>
+<span class="ck">with</span> <span class="cm">open</span>(<span class="cs">"names.txt"</span>, encoding=<span class="cs">"utf-8"</span>) <span class="ck">as</span> f:
+    <span class="ck">for</span> line <span class="ck">in</span> f:
+        <span class="ck">if</span> <span class="cs">'a'</span> <span class="ck">in</span> line:
+            <span class="cm">print</span>(line.<span class="cm">strip</span>())  <span class="cc"># strip() removes trailing \n</span>
+
+<span class="cc"># Output: alice, carol, dave  (bob skipped)</span>
+<span class="cc"># Note: every line from a file includes \n — always .strip()</span></pre>
+      </div>
+
+      <div class="tip-box">
+        <span class="tip-icon">💡</span>
+        <div class="tip-content">
+          <strong>Strip Your Lines</strong>
+          <p>Every line read from a text file includes a trailing <code>\n</code> character. Call <code>line.strip()</code> to remove leading and trailing whitespace, or <code>line.rstrip('\n')</code> to remove only the newline.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- §5 Writing -->
+    <div class="article-section">
+      <p class="section-kicker">§ 5 — Writing Text</p>
+      <h3 class="section-headline">Three Writing Methods: Know Your Newlines</h3>
+      <div class="section-body">
+        <p>The main source of bugs when writing files is newline handling. Each method treats newlines differently — pick the wrong one and you either miss line breaks or double them.</p>
+      </div>
+
+      <ul class="pattern-list">
+        <li>
+          <span class="pattern-tag">f.write(s)</span>
+          <span class="pattern-desc">Writes the string exactly as given. <strong>You must supply the newline</strong> — Python won't add one. Write <code>f.write("hello\n")</code> not <code>f.write("hello")</code>.</span>
+        </li>
+        <li>
+          <span class="pattern-tag">f.writelines(lst)</span>
+          <span class="pattern-desc">Writes each item from the list. <strong>Does NOT add newlines</strong> between items. Each string in the list must already contain <code>\n</code>.</span>
+        </li>
+        <li>
+          <span class="pattern-tag">print(…, file=f)</span>
+          <span class="pattern-desc"><strong>Adds a newline automatically.</strong> Cleanest for human-readable line-by-line output. Familiar syntax, no newline management needed.</span>
+        </li>
+      </ul>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dot cd-r"></div><div class="code-dot cd-y"></div><div class="code-dot cd-g"></div>
+          <span class="code-filename">write_cities.py</span>
+        </div>
+        <pre><span class="cc"># Using print(file=f) — automatic newlines, cleanest syntax</span>
+<span class="ck">with</span> <span class="cm">open</span>(<span class="cs">"cities.txt"</span>, <span class="cs">"w"</span>, encoding=<span class="cs">"utf-8"</span>) <span class="ck">as</span> f:
+    <span class="cm">print</span>(<span class="cs">"london"</span>, file=f)
+    <span class="cm">print</span>(<span class="cs">"paris"</span>,  file=f)
+    <span class="cm">print</span>(<span class="cs">"tokyo"</span>,  file=f)
+
+<span class="cc"># Using f.write() — you supply the \n</span>
+<span class="ck">with</span> <span class="cm">open</span>(<span class="cs">"cities.txt"</span>, <span class="cs">"w"</span>, encoding=<span class="cs">"utf-8"</span>) <span class="ck">as</span> f:
+    f.<span class="cm">write</span>(<span class="cs">"london\n"</span>)   <span class="cc"># \n required</span>
+    f.<span class="cm">write</span>(<span class="cs">"paris\n"</span>)
+    f.<span class="cm">write</span>(<span class="cs">"tokyo\n"</span>)
+
+<span class="cc"># Using f.writelines() — items must contain \n already</span>
+cities = [<span class="cs">"london\n"</span>, <span class="cs">"paris\n"</span>, <span class="cs">"tokyo\n"</span>]
+<span class="ck">with</span> <span class="cm">open</span>(<span class="cs">"cities.txt"</span>, <span class="cs">"w"</span>, encoding=<span class="cs">"utf-8"</span>) <span class="ck">as</span> f:
+    f.<span class="cm">writelines</span>(cities)</pre>
+      </div>
+    </div>
+
+  </div>
+</div><!-- end chapter-1 -->
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- CHAPTER III — DETAILS & RECALL                              -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="chapter-page" id="chapter-2">
+  <div class="container">
+
+    <div class="hero-band">
+      <span class="chapter-label">Chapter III — The Details &amp; Recall</span>
+      <h2 class="hero-headline">Binary, Encoding &amp; <em>The Recall Card</em></h2>
+      <p class="hero-intro">The last two conceptual sections — when to switch to bytes, and why UTF-8 must be explicit — plus the Golden Rules checklist and your personal Recall Trigger Card.</p>
+      <span class="section-count">Covers § 6 · § 7 · Rules · Recall Card</span>
+    </div>
+
+    <!-- §6 Binary vs Text -->
+    <div class="article-section">
+      <p class="section-kicker">§ 6 — Text vs Binary Mode</p>
+      <h3 class="section-headline">Two Worlds, One Wrong Choice</h3>
+      <div class="section-body">
+        <p>Python's file system operates in two fundamentally different modes. Picking the wrong one for your content type doesn't raise an error — it silently corrupts your file.</p>
+      </div>
+
+      <div class="two-col">
+        <div class="col-card">
+          <p class="col-card-title">Text Mode <code style="font-size:0.8rem">'t'</code> (default)</p>
+          <ul>
+            <li>Returns <span>str</span></li>
+            <li>Translates <span>\r\n → \n</span></li>
+            <li>Requires <span>encoding</span></li>
+            <li>Use for <span>.txt, .csv, .json, .py</span></li>
+          </ul>
+        </div>
+        <div class="col-card">
+          <p class="col-card-title">Binary Mode <code style="font-size:0.8rem">'b'</code></p>
+          <ul>
+            <li>Returns <span>bytes</span></li>
+            <li>No newline translation</li>
+            <li>No encoding arg</li>
+            <li>Use for <span>.png, .pdf, .zip, .exe</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="warn-box">
+        <span class="warn-icon">💥</span>
+        <div class="warn-content">
+          <strong>The Image Corruption Trap</strong>
+          <p>Opening a <code>.png</code> or any binary file in text mode corrupts it. Python's text layer translates byte sequences that look like line endings — destroying the binary structure. Always use <code>'rb'</code> / <code>'wb'</code> for non-text files.</p>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dot cd-r"></div><div class="code-dot cd-y"></div><div class="code-dot cd-g"></div>
+          <span class="code-filename">binary_copy.py</span>
+        </div>
+        <pre><span class="cc"># Safe binary copy — preserves every byte exactly</span>
+<span class="ck">with</span> <span class="cm">open</span>(<span class="cs">"image.png"</span>, <span class="cs">"rb"</span>) <span class="ck">as</span> src:
+    data = src.<span class="cm">read</span>()  <span class="cc"># returns bytes, not str</span>
+
+<span class="ck">with</span> <span class="cm">open</span>(<span class="cs">"image_copy.png"</span>, <span class="cs">"wb"</span>) <span class="ck">as</span> dst:
+    dst.<span class="cm">write</span>(data)
+
+<span class="cc"># Or in one block:</span>
+<span class="ck">with</span> <span class="cm">open</span>(<span class="cs">"in.png"</span>, <span class="cs">"rb"</span>) <span class="ck">as</span> s, <span class="cm">open</span>(<span class="cs">"out.png"</span>, <span class="cs">"wb"</span>) <span class="ck">as</span> d:
+    d.<span class="cm">write</span>(s.<span class="cm">read</span>())</pre>
+      </div>
+    </div>
+
+    <!-- §7 Encoding -->
+    <div class="article-section">
+      <p class="section-kicker">§ 7 — Encoding</p>
+      <h3 class="section-headline">UTF-8 Is Not the Default (On Windows)</h3>
+      <div class="section-body">
+        <p>This is one of the most common portability bugs in Python. When you omit the <code>encoding</code> argument, Python uses the platform's locale default — <code>cp1252</code> on many Windows systems, <code>UTF-8</code> on Linux/Mac. Code that works on your machine silently breaks on a colleague's.</p>
+        <p>The rule is simple: <strong>always specify <code>encoding='utf-8'</code> explicitly</strong>. No exceptions for text files.</p>
+      </div>
+
+      <div class="pull-quote">
+        <p>"<code>encoding='utf-8'</code> is not optional pedantry. It is the difference between code that works everywhere and code that breaks on deployment."</p>
+        <cite>§ 7 — Encoding</cite>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dot cd-r"></div><div class="code-dot cd-y"></div><div class="code-dot cd-g"></div>
+          <span class="code-filename">encoding_examples.py</span>
+        </div>
+        <pre><span class="cc"># Always explicit — works the same on all platforms</span>
+<span class="ck">with</span> <span class="cm">open</span>(<span class="cs">"drinks.txt"</span>, <span class="cs">"w"</span>, encoding=<span class="cs">"utf-8"</span>) <span class="ck">as</span> f:
+    f.<span class="cm">write</span>(<span class="cs">"café au lait\n"</span>)   <span class="cc"># é survives correctly</span>
+
+<span class="cc"># Error handling options for bad bytes</span>
+<span class="ck">with</span> <span class="cm">open</span>(<span class="cs">"messy.txt"</span>, encoding=<span class="cs">"utf-8"</span>, errors=<span class="cs">"replace"</span>) <span class="ck">as</span> f:
+    data = f.<span class="cm">read</span>()   <span class="cc"># bad bytes → replacement char (safe)</span>
+
+<span class="ck">with</span> <span class="cm">open</span>(<span class="cs">"messy.txt"</span>, encoding=<span class="cs">"utf-8"</span>, errors=<span class="cs">"ignore"</span>) <span class="ck">as</span> f:
+    data = f.<span class="cm">read</span>()   <span class="cc"># bad bytes silently dropped</span>
+
+<span class="cc"># Excel CSV trap — Excel writes a BOM marker at start</span>
+<span class="ck">with</span> <span class="cm">open</span>(<span class="cs">"export.csv"</span>, encoding=<span class="cs">"utf-8-sig"</span>) <span class="ck">as</span> f:
+    data = f.<span class="cm">read</span>()   <span class="cc"># utf-8-sig strips the BOM automatically</span></pre>
+      </div>
+
+      <div class="tip-box">
+        <span class="tip-icon">📊</span>
+        <div class="tip-content">
+          <strong>Excel CSV Trap</strong>
+          <p>CSVs exported from Excel often begin with a BOM (Byte Order Mark) character. Use <code>encoding='utf-8-sig'</code> instead of plain <code>'utf-8'</code> to strip it automatically — otherwise you'll see a mysterious <code>ï»¿</code> at the start of your first field.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Golden Rules -->
+    <div class="article-section">
+      <p class="section-kicker">The Golden Rules</p>
+      <h3 class="section-headline">Eight Rules That Prevent Every Common Bug</h3>
+      <div class="section-body">
+        <p>These eight rules were distilled from the session notes. Violate one and you'll almost certainly lose data, corrupt a file, or write non-portable code. Memorise them in order.</p>
+      </div>
+
+      <div class="golden-rules-grid">
+        <div class="rule-card">
+          <div class="rule-number">1</div>
+          <div class="rule-icon">🔒</div>
+          <div class="rule-title">Always use with open()</div>
+          <div class="rule-text">The context manager guarantees the file is closed — even on exceptions. No exceptions to this rule.</div>
+        </div>
+        <div class="rule-card">
+          <div class="rule-number">2</div>
+          <div class="rule-icon">🌐</div>
+          <div class="rule-title">Always specify encoding</div>
+          <div class="rule-text">Write <span class="rule-code">encoding='utf-8'</span> on every text file open. Platform defaults differ. UTF-8 is universal.</div>
+        </div>
+        <div class="rule-card">
+          <div class="rule-number">3</div>
+          <div class="rule-icon">🖼</div>
+          <div class="rule-title">Use 'b' for non-text</div>
+          <div class="rule-text">Images, PDFs, ZIPs, executables — anything that isn't plain text requires binary mode to avoid corruption.</div>
+        </div>
+        <div class="rule-card">
+          <div class="rule-number">4</div>
+          <div class="rule-icon">📋</div>
+          <div class="rule-title">newline='' with CSV</div>
+          <div class="rule-text">When using the <span class="rule-code">csv</span> module, open with <span class="rule-code">newline=''</span> to prevent double line-ending insertion.</div>
+        </div>
+        <div class="rule-card">
+          <div class="rule-number">5</div>
+          <div class="rule-icon">🌊</div>
+          <div class="rule-title">Iterate large files</div>
+          <div class="rule-text">For large files, use <span class="rule-code">for line in f</span>. Never <span class="rule-code">.read()</span> or <span class="rule-code">.readlines()</span> on files that may not fit in memory.</div>
+        </div>
+        <div class="rule-card">
+          <div class="rule-number">6</div>
+          <div class="rule-icon">⚛️</div>
+          <div class="rule-title">Atomic writes for critical output</div>
+          <div class="rule-text">Write to a temp file, <span class="rule-code">fsync()</span>, then <span class="rule-code">rename()</span>. A crash mid-write won't corrupt the real file.</div>
+        </div>
+        <div class="rule-card">
+          <div class="rule-number">7</div>
+          <div class="rule-icon">🛡</div>
+          <div class="rule-title">Use 'x' to protect outputs</div>
+          <div class="rule-text">For outputs you must never overwrite, use <span class="rule-code">'x'</span> mode. It raises <span class="rule-code">FileExistsError</span> rather than silently erasing data.</div>
+        </div>
+        <div class="rule-card">
+          <div class="rule-number">8</div>
+          <div class="rule-icon">📊</div>
+          <div class="rule-title">utf-8-sig for Excel CSVs</div>
+          <div class="rule-text">Use <span class="rule-code">encoding='utf-8-sig'</span> when reading Excel-exported CSVs to automatically strip the BOM character.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pending Sections -->
+    <div class="pending-section">
+      <p class="section-kicker">Coming Next</p>
+      <h3 class="section-headline" style="font-size:1.3rem">Sections Still Ahead</h3>
+      <p style="color:var(--muted);font-size:0.9rem;margin-top:8px">The following sections from the original Field Manual are scheduled for upcoming sessions:</p>
+      <div class="pending-grid">
+        <span class="pending-chip">§ 8 — seek & tell</span>
+        <span class="pending-chip">§ 9 — CSV module</span>
+        <span class="pending-chip">§ 10 — JSON</span>
+        <span class="pending-chip">§ 11 — Streaming large files</span>
+        <span class="pending-chip">§ 12 — Atomic writes</span>
+        <span class="pending-chip">§ 13 — pathlib helpers</span>
+        <span class="pending-chip">§ 14 — Common exceptions</span>
+        <span class="pending-chip">§ 15 — Tiny utilities</span>
+        <span class="pending-chip">§ 16 — Anti-patterns</span>
+        <span class="pending-chip">§ 17 — Cheat-sheet</span>
+      </div>
+    </div>
+
+    <!-- RECALL TRIGGER CARD -->
+    <div class="recall-card">
+      <span class="recall-badge">📇 Recall Trigger Card</span>
+      <h3 class="recall-title">Python File Handling — Sections 0 through 7</h3>
+
+      <div class="recall-hook">
+        <p>"A file is a pipe. If you leave it open, you flood the kitchen — and your data sits in the buffer like uncommitted cash, never reaching the bank."</p>
+      </div>
+
+      <p class="recall-section-label">Trigger Questions — Ask, Don't Read</p>
+      <ul class="recall-questions">
+        <li>In one sentence: why do we use <code>with open()</code> instead of calling <code>close()</code> manually?</li>
+        <li>What is the difference between <code>'w'</code> and <code>'a'</code> mode? When would each destroy your data?</li>
+        <li>Name the one reading pattern that is safe for files of any size. Why are the others dangerous?</li>
+        <li>What breaks if you open a <code>.png</code> in text mode? Why?</li>
+        <li>What happens to <code>café</code> if you write it without specifying <code>encoding='utf-8'</code> on Windows?</li>
+        <li>When would you use <code>'x'</code> mode, and what error does it raise?</li>
+      </ul>
+
+      <p class="recall-section-label">Mental Model — Before → After</p>
+      <div class="recall-belief">
+        <div class="belief-before">
+          <div class="belief-label">Old Belief</div>
+          "open() just opens a file — I can call close() at the bottom of the function, it'll be fine."
+        </div>
+        <div class="belief-after">
+          <div class="belief-label">New Belief</div>
+          "open() allocates a system resource. <code>with</code> guarantees it's returned — even if an exception fires. Anything else is a bug waiting for bad luck."
+        </div>
+      </div>
+
+      <p class="recall-section-label">Retrieval Keys</p>
+      <div class="recall-keys">
+        <span class="recall-key">with open() — always</span>
+        <span class="recall-key">encoding='utf-8' — always</span>
+        <span class="recall-key">'b' for binary · 'x' to protect</span>
+      </div>
+
+      <p class="recall-section-label">Warning Label</p>
+      <div class="recall-warn">
+        ⚠️ &nbsp;<strong>'w' mode erases the file the instant you open it</strong> — before you write a single byte. Use <code>'a'</code> to append safely or <code>'x'</code> to fail gracefully if the file already exists.
+      </div>
+
+      <p class="recall-section-label">Spaced Repeat Schedule</p>
+      <div class="recall-schedule">
+        <div class="sched-item">Review in 1 day</div>
+        <div class="sched-item">Review in 3 days</div>
+        <div class="sched-item">Review in 1 week</div>
+        <div class="sched-item">Review in 1 month</div>
+      </div>
+
+      <p class="recall-section-label">Teach-It Test</p>
+      <div class="recall-teach">
+        "When you open a file in Python, you're borrowing a numbered slot from the operating system — and you MUST give it back. The <code>with</code> keyword is a magical helper that always gives it back, even if something goes wrong midway. Without it, you can run out of slots, or your data never makes it to disk."
+      </div>
+    </div>
+
+  </div><!-- end container -->
+</div><!-- end chapter-2 -->
+
+
+<!-- FOOTER -->
+<footer class="page-footer">
+  <div class="container">
+    <p>Python File Handling Field Manual &nbsp;·&nbsp; Issue 2026-05-13 &nbsp;·&nbsp; Sections 0–7 of 17 &nbsp;·&nbsp; Built with Recall Magazine</p>
+  </div>
+</footer>
+
+
+<script>
+  // ─── LOADER ───
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      document.getElementById('loader').classList.add('hide');
+      setTimeout(() => document.getElementById('loader').remove(), 700);
+    }, 800);
+  });
+
+  // ─── CHAPTER SWITCHING ───
+  function showChapter(idx) {
+    document.querySelectorAll('.chapter-page').forEach((p, i) => {
+      p.classList.toggle('active', i === idx);
+    });
+    document.querySelectorAll('.chap-btn').forEach((b, i) => {
+      b.classList.toggle('active', i === idx);
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ─── HISTORY SIDEBAR ───
+  const historyData = [];
+  const list = document.getElementById('history-list');
+  if (historyData.length === 0) {
+    list.innerHTML = '<p style="font-size:12px;color:#555;font-family:sans-serif">No past issues yet.<br>This is issue #1!</p>';
+  } else {
+    [...historyData].reverse().forEach(item => {
+      list.innerHTML += `<div class="history-item"><a href="previous_news/${item.filename}">${item.title}</a><span>${item.date}</span></div>`;
+    });
+  }
+
+  // ─── INTERSECTION OBSERVER (fade in sections) ───
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.style.opacity = '1';
+          e.target.style.transform = 'none';
+        }
+      });
+    }, { threshold: 0.08 });
+
+    document.querySelectorAll('.article-section, .mode-card, .rule-card').forEach(el => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(16px)';
+      el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+      observer.observe(el);
+    });
+  }
+</script>
+
+</body>
+</html>
