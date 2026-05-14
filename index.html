@@ -1,455 +1,110 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Python File Handling — Field Manual</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Source+Sans+3:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snowflake & Data Warehouse — Recall Magazine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #faf7f2;
+    --ink: #1a1a18;
+    --muted: #6b6b60;
+    --rule: #ddd8cc;
+    --accent-warm: #c8602a;
+    --accent-cool: #2a5fa8;
+    --accent-energy: #1db8a0;
+    --card-bg: #ffffff;
+    --sidebar-bg: #1a1a18;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--paper); color: var(--ink); font-family: 'Inter', sans-serif; }
 
-    :root {
-      --paper: #faf8f3;
-      --ink: #1c1a17;
-      --muted: #6b6660;
-      --divider: #dbd7cf;
-      --accent-earth: #8B4513;
-      --accent-cool: #2c5f8a;
-      --accent-hot: #d94e1a;
-      --code-bg: #161412;
-      --code-fg: #e8e2d9;
-      --code-green: #98c379;
-      --code-yellow: #e5c07b;
-      --code-blue: #61afef;
-      --code-red: #e06c75;
-      --code-comment: #666;
-    }
+  /* LOADER */
+  #loader { position:fixed; inset:0; background:var(--ink); display:flex; align-items:center; justify-content:center; z-index:9999; transition: opacity 0.5s; }
+  #loader .l-text { color:#fff; font-family:'Playfair Display',serif; font-size:1.5rem; letter-spacing:0.2em; }
+  #loader.hidden { opacity:0; pointer-events:none; }
 
-    html { scroll-behavior: smooth; }
+  /* HISTORY SIDEBAR */
+  #history-drawer { position:fixed; top:0; left:-300px; width:300px; height:100vh; background:#111; color:#fff; overflow-y:auto; transition:left 0.3s ease; z-index:10000; padding:24px; box-sizing:border-box; }
+  #history-drawer.open { left:0; }
+  #history-toggle { position:fixed; top:50%; left:0; transform:translateY(-50%); background:#111; color:#fff; padding:10px 6px; cursor:pointer; z-index:10001; border-radius:0 6px 6px 0; font-size:11px; writing-mode:vertical-rl; letter-spacing:2px; }
+  #history-drawer h3 { margin:0 0 18px; font-size:13px; text-transform:uppercase; letter-spacing:2px; border-bottom:1px solid #444; padding-bottom:12px; }
+  .history-item { margin-bottom:14px; }
+  .history-item a { color:#f0c040; text-decoration:none; font-size:13px; font-weight:600; display:block; }
+  .history-item a:hover { text-decoration:underline; }
+  .history-item span { font-size:11px; color:#aaa; }
+  #history-close { float:right; cursor:pointer; font-size:18px; color:#aaa; }
 
-    body {
-      background: var(--paper);
-      color: var(--ink);
-      font-family: 'Source Sans 3', sans-serif;
-      font-size: 17px;
-      line-height: 1.7;
-      overflow-x: hidden;
-    }
+  /* NAV */
+  nav { position:sticky; top:0; background:rgba(250,247,242,0.96); backdrop-filter:blur(8px); border-bottom:1px solid var(--rule); z-index:100; padding:0 2rem; }
+  .nav-inner { max-width:1100px; margin:0 auto; display:flex; align-items:center; gap:2rem; height:52px; overflow-x:auto; }
+  .nav-logo { font-family:'Playfair Display',serif; font-weight:900; font-size:1.1rem; white-space:nowrap; color:var(--ink); text-decoration:none; margin-right:auto; }
+  nav a.section-link { font-size:0.72rem; text-transform:uppercase; letter-spacing:0.12em; color:var(--muted); text-decoration:none; white-space:nowrap; padding:4px 0; border-bottom:2px solid transparent; transition:all 0.2s; }
+  nav a.section-link:hover, nav a.section-link.active { color:var(--accent-warm); border-bottom-color:var(--accent-warm); }
 
-    /* ─── LOADER ─── */
-    #loader {
-      position: fixed; inset: 0; background: var(--ink);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 9999; transition: opacity 0.6s ease;
-    }
-    #loader.hide { opacity: 0; pointer-events: none; }
-    .loader-text {
-      color: var(--paper); font-family: 'Playfair Display', serif;
-      font-size: 1.4rem; letter-spacing: 0.3em; text-transform: uppercase;
-      animation: blink 1s ease infinite;
-    }
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  /* HERO */
+  .hero { min-height:92vh; display:grid; place-items:center; text-align:center; padding:6rem 2rem 4rem; background: linear-gradient(175deg, #1a1a18 0%, #2d2d2a 40%, #3a3530 100%); position:relative; overflow:hidden; }
+  .hero::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at 60% 40%, rgba(200,96,42,0.15) 0%, transparent 60%); }
+  .hero-kicker { font-size:0.72rem; letter-spacing:0.25em; text-transform:uppercase; color:var(--accent-energy); margin-bottom:1.5rem; }
+  .hero h1 { font-family:'Playfair Display',serif; font-size:clamp(2.8rem,7vw,5.5rem); font-weight:900; line-height:1.08; color:#fff; max-width:900px; margin-bottom:1.5rem; }
+  .hero h1 em { color:var(--accent-warm); font-style:italic; }
+  .hero .deck { font-size:1.1rem; line-height:1.7; color:rgba(255,255,255,0.65); max-width:600px; margin:0 auto 2.5rem; }
+  .hero-meta { display:flex; gap:2rem; justify-content:center; flex-wrap:wrap; }
+  .hero-meta span { font-size:0.72rem; letter-spacing:0.15em; text-transform:uppercase; color:rgba(255,255,255,0.4); }
+  .hero-meta strong { color:rgba(255,255,255,0.8); }
 
-    /* ─── MASTHEAD ─── */
-    .masthead {
-      border-bottom: 3px double var(--ink);
-      padding: 28px 0 18px;
-      text-align: center;
-      position: relative;
-    }
-    .masthead-overline {
-      font-size: 0.72rem; letter-spacing: 0.35em; text-transform: uppercase;
-      color: var(--muted); margin-bottom: 8px;
-    }
-    .masthead-title {
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(2rem, 5vw, 3.8rem);
-      font-weight: 900; line-height: 1.05; letter-spacing: -0.02em;
-    }
-    .masthead-title em { color: var(--accent-earth); font-style: italic; }
-    .masthead-deck {
-      margin-top: 10px; font-size: 0.95rem; color: var(--muted);
-      font-weight: 300; letter-spacing: 0.04em;
-    }
-    .masthead-meta {
-      margin-top: 14px; font-size: 0.72rem; letter-spacing: 0.2em;
-      text-transform: uppercase; color: var(--divider);
-      border-top: 1px solid var(--divider); padding-top: 12px;
-    }
+  /* CHAPTER DIVIDERS */
+  .chapter-header { background:var(--ink); color:#fff; padding:4rem 2rem 3rem; text-align:center; }
+  .chapter-num { font-size:0.7rem; letter-spacing:0.3em; text-transform:uppercase; color:var(--accent-warm); margin-bottom:0.75rem; }
+  .chapter-header h2 { font-family:'Playfair Display',serif; font-size:clamp(1.8rem,4vw,3rem); font-weight:700; }
+  .chapter-header p { margin-top:0.75rem; color:rgba(255,255,255,0.5); font-size:0.9rem; max-width:600px; margin-left:auto; margin-right:auto; }
 
-    /* ─── CHAPTER NAV ─── */
-    .chapter-nav {
-      position: sticky; top: 0; z-index: 100;
-      background: var(--ink); display: flex; justify-content: center;
-      gap: 0; border-bottom: 2px solid var(--accent-earth);
-    }
-    .chap-btn {
-      background: none; border: none; color: var(--divider);
-      font-family: 'Source Sans 3', sans-serif;
-      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.2em;
-      text-transform: uppercase; padding: 14px 28px; cursor: pointer;
-      position: relative; transition: color 0.25s;
-    }
-    .chap-btn::after {
-      content: ''; position: absolute; bottom: 0; left: 50%; right: 50%;
-      height: 3px; background: var(--accent-earth);
-      transition: left 0.25s, right 0.25s;
-    }
-    .chap-btn.active { color: #fff; }
-    .chap-btn.active::after { left: 0; right: 0; }
-    .chap-btn:hover { color: #fff; }
+  /* CARD GRID */
+  .card-grid { max-width:1100px; margin:0 auto; padding:3rem 2rem; display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:2rem; }
 
-    /* ─── CHAPTER PAGES ─── */
-    .chapter-page { display: none; animation: fadeIn 0.4s ease; }
-    .chapter-page.active { display: block; }
-    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+  /* RECALL CARD */
+  .rcard { background:var(--card-bg); border:1px solid var(--rule); border-radius:12px; overflow:hidden; opacity:0; transform:translateY(24px); transition:opacity 0.5s, transform 0.5s; }
+  .rcard.visible { opacity:1; transform:translateY(0); }
+  .rcard:hover { box-shadow:0 8px 32px rgba(0,0,0,0.1); transform:translateY(-2px); }
+  .rcard-header { padding:1.25rem 1.5rem 1rem; border-bottom:1px solid var(--rule); display:flex; align-items:flex-start; gap:1rem; }
+  .rcard-num { font-family:'JetBrains Mono',monospace; font-size:0.68rem; color:var(--muted); min-width:32px; padding-top:4px; }
+  .rcard-title { font-family:'Playfair Display',serif; font-size:1.15rem; font-weight:700; line-height:1.3; }
+  .rcard-tag { font-size:0.65rem; letter-spacing:0.12em; text-transform:uppercase; color:#fff; background:var(--accent-cool); border-radius:4px; padding:2px 8px; margin-top:4px; display:inline-block; }
+  .rcard-body { padding:1.25rem 1.5rem; }
+  .hook { font-style:italic; font-size:0.9rem; color:var(--muted); border-left:3px solid var(--accent-warm); padding-left:0.75rem; margin-bottom:1.25rem; line-height:1.6; }
+  .mental-model { background:#f5f3ee; border-radius:8px; padding:0.9rem 1rem; margin-bottom:1.25rem; font-size:0.84rem; }
+  .mental-model .before { color:#a0430a; margin-bottom:4px; }
+  .mental-model .after { color:#1a6640; }
+  .mental-model span { font-weight:600; }
+  .warning { font-size:0.8rem; color:#b03030; background:#fff5f5; border-radius:6px; padding:0.6rem 0.9rem; margin-bottom:1.1rem; }
+  .keys { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:1.1rem; }
+  .key-chip { font-size:0.7rem; background:#f0ede6; border-radius:20px; padding:3px 10px; color:var(--ink); font-family:'JetBrains Mono',monospace; cursor:default; }
+  .teach-it { font-size:0.82rem; color:var(--muted); font-style:italic; line-height:1.6; border-top:1px solid var(--rule); padding-top:1rem; }
+  .spaced-repeat { padding:0 1.5rem 1.25rem; }
+  .sr-label { font-size:0.65rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:0.5rem; }
+  .sr-chips { display:flex; gap:6px; flex-wrap:wrap; }
+  .sr-chip { font-size:0.68rem; border:1px solid var(--rule); border-radius:20px; padding:3px 10px; cursor:pointer; transition:all 0.2s; }
+  .sr-chip.done { background:var(--accent-energy); border-color:var(--accent-energy); color:#fff; text-decoration:line-through; }
 
-    /* ─── LAYOUT ─── */
-    .container { max-width: 860px; margin: 0 auto; padding: 0 28px; }
-    .wide-container { max-width: 1040px; margin: 0 auto; padding: 0 28px; }
+  /* PULL QUOTE */
+  .pull-quote-section { background:var(--ink); padding:4rem 2rem; text-align:center; }
+  .pull-quote-section blockquote { font-family:'Playfair Display',serif; font-size:clamp(1.4rem,3vw,2.2rem); font-style:italic; color:#fff; max-width:800px; margin:0 auto; line-height:1.5; }
+  .pull-quote-section cite { display:block; margin-top:1.25rem; font-size:0.75rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--accent-energy); font-style:normal; }
 
-    /* ─── HERO BAND ─── */
-    .hero-band {
-      padding: 64px 0 48px;
-      border-bottom: 1px solid var(--divider);
-    }
-    .chapter-label {
-      font-size: 0.7rem; letter-spacing: 0.35em; text-transform: uppercase;
-      color: var(--accent-earth); font-weight: 700; margin-bottom: 16px;
-      display: block;
-    }
-    .hero-headline {
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(2rem, 4.5vw, 3.2rem);
-      font-weight: 900; line-height: 1.1;
-      max-width: 640px;
-    }
-    .hero-headline em { color: var(--accent-cool); font-style: italic; }
-    .hero-intro {
-      margin-top: 20px; font-size: 1.1rem; color: var(--muted);
-      max-width: 560px; font-weight: 300; line-height: 1.6;
-    }
-    .section-count {
-      display: inline-block; margin-top: 20px;
-      font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase;
-      color: var(--muted); border: 1px solid var(--divider);
-      padding: 4px 12px; border-radius: 2px;
-    }
+  /* FOOTER */
+  footer { background:var(--ink); color:rgba(255,255,255,0.4); text-align:center; padding:3rem 2rem; font-size:0.8rem; }
+  footer strong { color:rgba(255,255,255,0.7); }
 
-    /* ─── ARTICLE SECTION ─── */
-    .article-section {
-      padding: 52px 0 40px;
-      border-bottom: 1px solid var(--divider);
-    }
-    .article-section:last-child { border-bottom: none; }
-
-    .section-kicker {
-      font-size: 0.68rem; letter-spacing: 0.3em; text-transform: uppercase;
-      color: var(--accent-earth); font-weight: 700; margin-bottom: 12px;
-    }
-    .section-headline {
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(1.4rem, 3vw, 2rem);
-      font-weight: 700; line-height: 1.2; margin-bottom: 20px;
-    }
-    .section-body {
-      font-size: 1rem; line-height: 1.8; color: var(--ink); max-width: 680px;
-    }
-    .section-body p { margin-bottom: 1.1em; }
-    .section-body strong { font-weight: 700; }
-    .section-body code {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.85em; background: rgba(0,0,0,0.06);
-      padding: 1px 6px; border-radius: 3px; color: var(--accent-earth);
-    }
-
-    /* ─── PULL QUOTE ─── */
-    .pull-quote {
-      margin: 36px 0;
-      padding: 24px 28px 24px 32px;
-      border-left: 4px solid var(--accent-earth);
-      background: rgba(139,69,19,0.05);
-    }
-    .pull-quote p {
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(1.1rem, 2.5vw, 1.35rem);
-      font-style: italic; line-height: 1.5; color: var(--ink);
-    }
-    .pull-quote cite {
-      display: block; margin-top: 8px;
-      font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase;
-      color: var(--muted); font-style: normal;
-    }
-
-    /* ─── CODE BLOCK ─── */
-    .code-block {
-      background: var(--code-bg);
-      border-radius: 6px; overflow: hidden;
-      margin: 24px 0; box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    }
-    .code-header {
-      background: #0d0b09; padding: 10px 18px;
-      display: flex; align-items: center; gap: 10px;
-    }
-    .code-dot { width: 10px; height: 10px; border-radius: 50%; }
-    .cd-r { background: #ff5f57; }
-    .cd-y { background: #febc2e; }
-    .cd-g { background: #28c840; }
-    .code-filename {
-      margin-left: auto; font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem; color: #555; letter-spacing: 0.05em;
-    }
-    .code-block pre {
-      padding: 20px 22px; overflow-x: auto;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.82rem; line-height: 1.7;
-      color: var(--code-fg);
-    }
-    .ck { color: var(--code-blue); }    /* keyword */
-    .cs { color: var(--code-green); }   /* string */
-    .cc { color: var(--code-comment); font-style: italic; } /* comment */
-    .cm { color: var(--code-yellow); }  /* method/var */
-    .ce { color: var(--code-red); }     /* error/warning */
-    .cn { color: #d19a66; }             /* number */
-
-    /* ─── MODE TABLE ─── */
-    .mode-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      gap: 16px; margin: 28px 0;
-    }
-    .mode-card {
-      border: 1px solid var(--divider); border-radius: 6px;
-      padding: 18px; position: relative; overflow: hidden;
-      transition: box-shadow 0.2s, transform 0.2s;
-    }
-    .mode-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.1); transform: translateY(-2px); }
-    .mode-card::before {
-      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-    }
-    .mode-r::before { background: var(--accent-cool); }
-    .mode-w::before { background: var(--accent-hot); }
-    .mode-a::before { background: #5a9e6f; }
-    .mode-x::before { background: #9b59b6; }
-    .mode-b::before { background: var(--muted); }
-    .mode-label {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1.5rem; font-weight: 700; color: var(--ink);
-      margin-bottom: 8px;
-    }
-    .mode-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; }
-    .mode-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
-    .mode-danger {
-      margin-top: 10px; font-size: 0.75rem; color: var(--accent-hot);
-      font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em;
-    }
-
-    /* ─── WARNING BOX ─── */
-    .warn-box {
-      background: rgba(217,78,26,0.07);
-      border: 1px solid rgba(217,78,26,0.3);
-      border-radius: 6px; padding: 18px 22px; margin: 24px 0;
-      display: flex; gap: 14px; align-items: flex-start;
-    }
-    .warn-icon { font-size: 1.4rem; flex-shrink: 0; margin-top: 1px; }
-    .warn-content strong {
-      display: block; font-size: 0.78rem; letter-spacing: 0.15em;
-      text-transform: uppercase; color: var(--accent-hot); margin-bottom: 4px;
-    }
-    .warn-content p { font-size: 0.92rem; color: var(--ink); line-height: 1.6; }
-
-    /* ─── TIP BOX ─── */
-    .tip-box {
-      background: rgba(44,95,138,0.07);
-      border: 1px solid rgba(44,95,138,0.25);
-      border-radius: 6px; padding: 18px 22px; margin: 24px 0;
-      display: flex; gap: 14px; align-items: flex-start;
-    }
-    .tip-icon { font-size: 1.4rem; flex-shrink: 0; }
-    .tip-content strong {
-      display: block; font-size: 0.78rem; letter-spacing: 0.15em;
-      text-transform: uppercase; color: var(--accent-cool); margin-bottom: 4px;
-    }
-    .tip-content p { font-size: 0.92rem; color: var(--ink); line-height: 1.6; }
-
-    /* ─── READ PATTERNS ─── */
-    .pattern-list { list-style: none; margin: 20px 0; }
-    .pattern-list li {
-      display: flex; align-items: baseline; gap: 14px;
-      padding: 12px 0; border-bottom: 1px solid var(--divider);
-      font-size: 0.95rem;
-    }
-    .pattern-list li:last-child { border-bottom: none; }
-    .pattern-tag {
-      font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;
-      background: var(--ink); color: var(--paper);
-      padding: 2px 8px; border-radius: 3px; white-space: nowrap; flex-shrink: 0;
-    }
-    .pattern-desc { color: var(--muted); }
-    .pattern-best { color: var(--accent-earth); font-weight: 700; }
-
-    /* ─── TWO-COL ─── */
-    .two-col {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 28px;
-      margin: 28px 0;
-    }
-    @media (max-width: 600px) { .two-col { grid-template-columns: 1fr; } }
-    .col-card {
-      border: 1px solid var(--divider); border-radius: 6px; padding: 22px;
-    }
-    .col-card-title {
-      font-family: 'Playfair Display', serif; font-size: 1rem;
-      font-weight: 700; margin-bottom: 12px; padding-bottom: 10px;
-      border-bottom: 1px solid var(--divider);
-    }
-    .col-card ul { list-style: none; }
-    .col-card ul li { padding: 6px 0; font-size: 0.9rem; border-bottom: 1px dashed var(--divider); }
-    .col-card ul li:last-child { border: none; }
-    .col-card ul li span { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--accent-cool); }
-
-    /* ─── GOLDEN RULES ─── */
-    .golden-rules-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 18px; margin: 28px 0;
-    }
-    .rule-card {
-      border-radius: 6px; padding: 22px; position: relative;
-      background: var(--ink); color: var(--paper);
-      transition: transform 0.2s;
-    }
-    .rule-card:hover { transform: translateY(-3px); }
-    .rule-number {
-      font-family: 'Playfair Display', serif;
-      font-size: 3rem; font-weight: 900; color: rgba(255,255,255,0.08);
-      position: absolute; top: 10px; right: 16px; line-height: 1;
-    }
-    .rule-icon { font-size: 1.6rem; margin-bottom: 12px; }
-    .rule-title { font-weight: 700; font-size: 0.9rem; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; color: var(--accent-earth); }
-    .rule-text { font-size: 0.88rem; line-height: 1.6; color: rgba(255,255,255,0.75); }
-    .rule-code { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 3px; }
-
-    /* ─── RECALL CARD ─── */
-    .recall-card {
-      background: var(--ink); color: var(--paper);
-      border-radius: 8px; padding: 40px; margin: 48px 0;
-      position: relative; overflow: hidden;
-    }
-    .recall-card::before {
-      content: '◈'; position: absolute; right: 30px; top: 20px;
-      font-size: 8rem; color: rgba(255,255,255,0.04);
-      font-family: serif; line-height: 1;
-    }
-    .recall-badge {
-      display: inline-block; background: var(--accent-earth);
-      color: #fff; font-size: 0.65rem; letter-spacing: 0.25em;
-      text-transform: uppercase; padding: 4px 12px; border-radius: 2px;
-      margin-bottom: 20px; font-weight: 700;
-    }
-    .recall-title {
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 900;
-      margin-bottom: 12px; line-height: 1.2;
-    }
-    .recall-hook {
-      background: rgba(255,255,255,0.06); border-left: 3px solid var(--accent-earth);
-      padding: 16px 20px; margin: 20px 0; border-radius: 0 4px 4px 0;
-    }
-    .recall-hook p {
-      font-family: 'Playfair Display', serif; font-style: italic;
-      font-size: 1.1rem; line-height: 1.5; color: rgba(255,255,255,0.9);
-    }
-    .recall-section-label {
-      font-size: 0.68rem; letter-spacing: 0.3em; text-transform: uppercase;
-      color: var(--accent-earth); font-weight: 700; margin: 24px 0 10px;
-    }
-    .recall-questions { list-style: none; }
-    .recall-questions li {
-      padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.07);
-      font-size: 0.95rem; color: rgba(255,255,255,0.8); display: flex; gap: 10px;
-    }
-    .recall-questions li::before { content: '→'; color: var(--accent-earth); flex-shrink: 0; }
-    .recall-belief {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 12px 0;
-    }
-    @media (max-width:560px) { .recall-belief { grid-template-columns: 1fr; } }
-    .belief-before, .belief-after {
-      padding: 14px; border-radius: 4px; font-size: 0.88rem; line-height: 1.55;
-    }
-    .belief-before { background: rgba(217,78,26,0.15); border: 1px solid rgba(217,78,26,0.3); }
-    .belief-after  { background: rgba(90,158,111,0.15); border: 1px solid rgba(90,158,111,0.3); }
-    .belief-label { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 6px; font-weight: 700; }
-    .belief-before .belief-label { color: #e06c75; }
-    .belief-after  .belief-label { color: #98c379; }
-    .recall-keys { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0; }
-    .recall-key {
-      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 3px; padding: 5px 12px;
-      font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
-      color: var(--code-yellow);
-    }
-    .recall-warn {
-      background: rgba(217,78,26,0.12); border: 1px solid rgba(217,78,26,0.3);
-      border-radius: 4px; padding: 14px 18px; margin: 16px 0;
-      font-size: 0.9rem; color: rgba(255,255,255,0.85); line-height: 1.55;
-    }
-    .recall-schedule {
-      display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0;
-    }
-    .sched-item {
-      border: 1px solid rgba(255,255,255,0.2); border-radius: 3px;
-      padding: 6px 14px; font-size: 0.8rem; color: rgba(255,255,255,0.6);
-      display: flex; align-items: center; gap: 6px;
-    }
-    .sched-item::before { content: '☐'; font-size: 1rem; }
-    .recall-teach {
-      background: rgba(255,255,255,0.04); border-radius: 4px;
-      padding: 16px 20px; margin: 12px 0;
-      font-style: italic; font-size: 0.95rem;
-      color: rgba(255,255,255,0.8); line-height: 1.6;
-    }
-
-    /* ─── PENDING BADGE ─── */
-    .pending-section {
-      padding: 36px 0; border-top: 1px solid var(--divider);
-    }
-    .pending-grid {
-      display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px;
-    }
-    .pending-chip {
-      border: 1px dashed var(--divider); border-radius: 3px;
-      padding: 6px 14px; font-size: 0.8rem; color: var(--muted);
-      font-family: 'JetBrains Mono', monospace;
-    }
-
-    /* ─── FOOTER ─── */
-    .page-footer {
-      border-top: 3px double var(--ink); padding: 28px 0;
-      text-align: center; margin-top: 60px;
-    }
-    .page-footer p { font-size: 0.75rem; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; }
-
-    /* ─── HISTORY SIDEBAR ─── */
-    #history-drawer { position:fixed; top:0; left:-290px; width:290px; height:100vh; background:#111; color:#fff; overflow-y:auto; transition:left 0.3s ease; z-index:9999; padding:24px 20px; box-sizing:border-box; }
-    #history-drawer.open { left:0; }
-    #history-toggle { position:fixed; top:50%; left:0; transform:translateY(-50%); background:#111; color:#fff; padding:12px 6px; cursor:pointer; z-index:10000; border-radius:0 6px 6px 0; font-size:11px; writing-mode:vertical-rl; letter-spacing:2px; border: 1px solid rgba(255,255,255,0.1); border-left: none; }
-    #history-drawer h3 { margin:0 0 18px; font-size:12px; text-transform:uppercase; letter-spacing:3px; border-bottom:1px solid #333; padding-bottom:12px; font-family:'Source Sans 3',sans-serif; }
-    .history-item { margin-bottom:16px; }
-    .history-item a { color:#e5c07b; text-decoration:none; font-size:13px; font-weight:600; display:block; font-family:'Source Sans 3',sans-serif; }
-    .history-item a:hover { color:#f0d08c; }
-    .history-item span { font-size:11px; color:#666; }
-    #history-close { float:right; cursor:pointer; font-size:18px; color:#555; line-height:1; }
-    #history-close:hover { color:#aaa; }
-
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
-    }
-  </style>
+  @media(max-width:600px) { .card-grid { padding:2rem 1rem; } }
+  @media(prefers-reduced-motion:reduce) { .rcard { transition:none; opacity:1; transform:none; } }
+</style>
 </head>
 <body>
 
-<!-- LOADER -->
-<div id="loader"><div class="loader-text">Loading Field Manual…</div></div>
+<div id="loader"><span class="l-text">LOADING RECALL EDITION</span></div>
 
 <!-- HISTORY SIDEBAR -->
 <div id="history-toggle" onclick="document.getElementById('history-drawer').classList.toggle('open')">📰 History</div>
@@ -458,632 +113,969 @@
   <div id="history-list"></div>
 </div>
 
-<!-- MASTHEAD -->
-<header>
-  <div class="container">
-    <div class="masthead">
-      <p class="masthead-overline">The Recall Field Manual · Python Series</p>
-      <h1 class="masthead-title">Python <em>File Handling</em></h1>
-      <p class="masthead-deck">Sections 0 through 7 · From raw descriptors to encoding traps — everything you need to open, read, write, and close files with confidence.</p>
-      <p class="masthead-meta">Issue Date: May 13, 2026 &nbsp;·&nbsp; Reporter: Upendar &nbsp;·&nbsp; Sections Covered: 8 of 17</p>
-    </div>
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" href="#">❄️ Snowflake Recall</a>
+    <a class="section-link" href="#ch1">Foundations</a>
+    <a class="section-link" href="#ch2">Architecture</a>
+    <a class="section-link" href="#ch3">Modeling</a>
+    <a class="section-link" href="#ch4">ETL & SCDs</a>
+    <a class="section-link" href="#ch5">Advanced</a>
+    <a class="section-link" href="#ch6">Power Features</a>
   </div>
-</header>
-
-<!-- CHAPTER NAV -->
-<nav class="chapter-nav" role="navigation" aria-label="Chapter navigation">
-  <button class="chap-btn active" onclick="showChapter(0)" id="btn-0">Ⅰ · The Foundation</button>
-  <button class="chap-btn" onclick="showChapter(1)" id="btn-1">Ⅱ · The Patterns</button>
-  <button class="chap-btn" onclick="showChapter(2)" id="btn-2">Ⅲ · Details & Recall</button>
 </nav>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- CHAPTER I — THE FOUNDATION                                   -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<div class="chapter-page active" id="chapter-0">
-  <div class="container">
-
-    <!-- Hero -->
-    <div class="hero-band">
-      <span class="chapter-label">Chapter I — The Foundation</span>
-      <h2 class="hero-headline">The Mental Model &amp; <em>File Modes</em></h2>
-      <p class="hero-intro">Before you type a single line of file code, you need the right picture in your head: what a file actually is, why closing matters, and what each mode does to your data.</p>
-      <span class="section-count">Covers § 0 · § 1 · § 2</span>
+<!-- HERO -->
+<section class="hero">
+  <div>
+    <div class="hero-kicker">Recall Trigger Magazine · Data Engineering Edition</div>
+    <h1>Master <em>Snowflake</em> &amp;<br>Data Warehousing</h1>
+    <p class="deck">26 recall trigger cards. 6 chapters. Everything from DW Basics to Dynamic Data Masking — structured for retention, not passive reading.</p>
+    <div class="hero-meta">
+      <span><strong>26</strong> Recall Cards</span>
+      <span><strong>6</strong> Chapters</span>
+      <span><strong>May 2026</strong> Edition</span>
     </div>
+  </div>
+</section>
 
-    <!-- §0 Mental Model -->
-    <div class="article-section">
-      <p class="section-kicker">§ 0 — Mental Model</p>
-      <h3 class="section-headline">A File Is a Pipe, Not a Room</h3>
-      <div class="section-body">
-        <p>Most beginners picture a file as a room — you walk in, grab what you want, walk out. The accurate picture is a <strong>pipe connected to a descriptor</strong>: the operating system hands you a numbered slot (a file descriptor) and routes everything through it.</p>
-        <p>Python wraps that descriptor in a file object and gives you methods. But the OS has a hard limit — roughly <strong>1,024 open descriptors per process</strong>. Leave files open and you hit <code>OSError: Too many open files</code>.</p>
-        <p>There's a second danger: writes don't go straight to disk. They sit in a buffer — like cash on your desk instead of in the bank. Until <code>close()</code> is called, that buffer may never be flushed. The file on disk is incomplete, as if a transaction was never committed.</p>
-      </div>
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- CHAPTER 1: DATA WAREHOUSE FOUNDATIONS -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section id="ch1">
+  <div class="chapter-header">
+    <div class="chapter-num">Chapter 01</div>
+    <h2>Data Warehouse Foundations</h2>
+    <p>DW basics, OLTP vs OLAP, warehouse layers, and Data Lake distinctions</p>
+  </div>
 
-      <div class="pull-quote">
-        <p>"A file is a sequence of bytes accessed through a file descriptor. You MUST close it — or the OS runs out of pipes and your data stays in limbo."</p>
-        <cite>§ 0 — Mental Model</cite>
-      </div>
+  <div class="card-grid">
 
-      <div class="two-col">
-        <div class="col-card">
-          <p class="col-card-title">Danger 1 — Descriptor Leak</p>
-          <ul>
-            <li>OS limit: <span>~1,024 open files</span></li>
-            <li>Symptom: <span>OSError: Too many open files</span></li>
-            <li>Fix: <span>Always close()</span></li>
-          </ul>
-        </div>
-        <div class="col-card">
-          <p class="col-card-title">Danger 2 — Unflushed Buffer</p>
-          <ul>
-            <li>Writes go to buffer first</li>
-            <li>Disk only updated on <span>close() / flush()</span></li>
-            <li>Unflushed = data is <span>lost on crash</span></li>
-          </ul>
+    <!-- CARD 1: DW Basics -->
+    <article class="rcard">
+      <div class="rcard-header">
+        <div class="rcard-num">01</div>
+        <div>
+          <div class="rcard-title">What is a Data Warehouse?</div>
+          <div class="rcard-tag">DW Basics</div>
         </div>
       </div>
-    </div>
-
-    <!-- §1-2 File Modes -->
-    <div class="article-section">
-      <p class="section-kicker">§ 1 &amp; 2 — open() and File Modes</p>
-      <h3 class="section-headline">Every Mode Is a Contract</h3>
-      <div class="section-body">
-        <p>When you call <code>open()</code>, you make a contract with the OS. The mode argument tells it what you intend to do — and the OS enforces it. Get the mode wrong and you silently erase data or corrupt a binary file.</p>
+      <div class="rcard-body">
+        <div class="hook">"A DW is a library — everything curated, indexed, and optimized for reading, not for updating."</div>
+        <div class="mental-model">
+          <div class="before"><span>Before:</span> A database and a data warehouse are basically the same thing.</div>
+          <div class="after"><span>After:</span> A DW is purpose-built for analytical queries — historical, integrated, subject-oriented, non-volatile.</div>
+        </div>
+        <div class="warning">⚠️ Don't say "we store data" — say "we integrate, transform, and serve historical data for analysis."</div>
+        <div class="keys"><span class="key-chip">subject-oriented</span><span class="key-chip">integrated</span><span class="key-chip">non-volatile</span></div>
+        <div class="teach-it">Imagine a giant filing cabinet where every department's data is cleaned, organized, and stored forever — just for reports, never for daily operations.</div>
       </div>
-
-      <div class="mode-grid">
-        <div class="mode-card mode-r">
-          <div class="mode-label">'r'</div>
-          <div class="mode-title">Read Only</div>
-          <div class="mode-desc">Opens an existing file for reading. Raises <code>FileNotFoundError</code> if the file doesn't exist. Nothing is created or changed.</div>
-        </div>
-        <div class="mode-card mode-w">
-          <div class="mode-label">'w'</div>
-          <div class="mode-title">Write (Overwrite)</div>
-          <div class="mode-desc">Creates the file if needed, <strong>erases all existing content silently</strong> if it does exist. Use with caution.</div>
-          <div class="mode-danger">⚠ Erases existing content</div>
-        </div>
-        <div class="mode-card mode-a">
-          <div class="mode-label">'a'</div>
-          <div class="mode-title">Append</div>
-          <div class="mode-desc">Opens for writing, but preserves existing content and adds new data at the end. Safe for logs and growing files.</div>
-        </div>
-        <div class="mode-card mode-x">
-          <div class="mode-label">'x'</div>
-          <div class="mode-title">Exclusive Create</div>
-          <div class="mode-desc">Creates a new file. Raises <code>FileExistsError</code> if the file already exists. The safest way to avoid accidental overwrites.</div>
-          <div class="mode-danger">🛡 Fails safely if file exists</div>
-        </div>
-        <div class="mode-card mode-b">
-          <div class="mode-label">'b'</div>
-          <div class="mode-title">Binary Suffix</div>
-          <div class="mode-desc">Append to any mode: <code>'rb'</code>, <code>'wb'</code>. Returns bytes instead of str. Required for images, PDFs, ZIPs — anything that isn't plain text.</div>
-          <div class="mode-danger">🖼 Images need 'b'</div>
-        </div>
-        <div class="mode-card mode-b">
-          <div class="mode-label">'t'</div>
-          <div class="mode-title">Text Suffix (Default)</div>
-          <div class="mode-desc">The default mode. Returns str, translates line endings. Omitting it is the same as writing <code>'rt'</code> or <code>'wt'</code>.</div>
+      <div class="spaced-repeat">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
         </div>
       </div>
+    </article>
 
-      <div class="section-body">
-        <p>The <strong>'x' pattern with error handling</strong> is your guard against overwriting outputs you don't want to lose:</p>
-      </div>
-
-      <div class="code-block">
-        <div class="code-header">
-          <div class="code-dot cd-r"></div><div class="code-dot cd-y"></div><div class="code-dot cd-g"></div>
-          <span class="code-filename">safe_create.py</span>
-        </div>
-        <pre><span class="cc"># Safe create — never overwrite</span>
-<span class="ck">try</span>:
-    <span class="ck">with</span> <span class="cm">open</span>(<span class="cs">"report.txt"</span>, <span class="cs">"x"</span>) <span class="ck">as</span> f:
-        f.<span class="cm">write</span>(<span class="cs">"Analysis complete\n"</span>)
-<span class="ck">except</span> <span class="ce">FileExistsError</span>:
-    <span class="cm">print</span>(<span class="cs">"File already exists — skipping"</span>)
-
-<span class="cc"># Other key examples</span>
-<span class="cm">open</span>(<span class="cs">"log.txt"</span>,    <span class="cs">"a"</span>)   <span class="cc"># append without overwriting</span>
-<span class="cm">open</span>(<span class="cs">"image.png"</span>,  <span class="cs">"rb"</span>)  <span class="cc"># binary read (images need 'b')</span>
-<span class="cm">open</span>(<span class="cs">"output.txt"</span>, <span class="cs">"w"</span>,  encoding=<span class="cs">"utf-8"</span>)  <span class="cc"># write with encoding</span></pre>
-      </div>
-
-      <div class="warn-box">
-        <span class="warn-icon">⚠️</span>
-        <div class="warn-content">
-          <strong>The 'w' Trap</strong>
-          <p><code>'w'</code> mode erases the file the instant you open it — before you write a single byte. There is no undo. If you meant to append, use <code>'a'</code>. If you want to fail safely rather than overwrite, use <code>'x'</code>.</p>
+    <!-- CARD 2: OLTP vs OLAP -->
+    <article class="rcard">
+      <div class="rcard-header">
+        <div class="rcard-num">02</div>
+        <div>
+          <div class="rcard-title">OLTP vs OLAP</div>
+          <div class="rcard-tag">DW Basics</div>
         </div>
       </div>
-    </div>
+      <div class="rcard-body">
+        <div class="hook">"OLTP is a cashier ringing up orders. OLAP is the CFO reviewing quarterly trends."</div>
+        <div class="mental-model">
+          <div class="before"><span>Before:</span> Both handle SQL queries, so they're interchangeable.</div>
+          <div class="after"><span>After:</span> OLTP = small, fast, transactional writes. OLAP = large, complex, analytical reads across millions of rows.</div>
+        </div>
+        <div class="warning">⚠️ OLTP is normalized (3NF) to avoid redundancy. OLAP is denormalized for fast reads — the opposite goal.</div>
+        <div class="keys"><span class="key-chip">OLTP = writes</span><span class="key-chip">OLAP = reads</span><span class="key-chip">3NF vs star</span></div>
+        <div class="teach-it">OLTP handles your bank recording a transaction right now. OLAP helps the bank understand all your transactions over 5 years.</div>
+      </div>
+      <div class="spaced-repeat">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- CARD 3: DW Layers -->
+    <article class="rcard">
+      <div class="rcard-header">
+        <div class="rcard-num">03</div>
+        <div>
+          <div class="rcard-title">Data Warehouse Layers</div>
+          <div class="rcard-tag">DW Architecture</div>
+        </div>
+      </div>
+      <div class="rcard-body">
+        <div class="hook">"Raw → Cleaned → Served. Each layer adds a layer of trust."</div>
+        <div class="mental-model">
+          <div class="before"><span>Before:</span> Just load data into one big table and query it.</div>
+          <div class="after"><span>After:</span> Staging (raw) → ODS (operational) → Core/DW (transformed) → Data Mart (subject-specific). Each step adds governance.</div>
+        </div>
+        <div class="warning">⚠️ Never query from staging in production dashboards — it's untransformed, potentially duplicated data.</div>
+        <div class="keys"><span class="key-chip">staging</span><span class="key-chip">ODS</span><span class="key-chip">data mart</span></div>
+        <div class="teach-it">Think of it like cooking: first you buy raw groceries (staging), then you prep them (ODS), then you cook the dish (DW), then you plate it (data mart).</div>
+      </div>
+      <div class="spaced-repeat">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- CARD 4: Data Lake vs DW -->
+    <article class="rcard">
+      <div class="rcard-header">
+        <div class="rcard-num">04</div>
+        <div>
+          <div class="rcard-title">Data Lake vs Data Warehouse</div>
+          <div class="rcard-tag">DW Basics</div>
+        </div>
+      </div>
+      <div class="rcard-body">
+        <div class="hook">"Data Lake = dump it all in a pond. Data Warehouse = fill a curated swimming pool."</div>
+        <div class="mental-model">
+          <div class="before"><span>Before:</span> Data Lake is just a cheaper Data Warehouse.</div>
+          <div class="after"><span>After:</span> Lake = schema-on-read, raw, unstructured/semi-structured. DW = schema-on-write, structured, governed, query-optimized.</div>
+        </div>
+        <div class="warning">⚠️ "Data Swamp" happens when a Data Lake has no governance — metadata, cataloging, and access controls are mandatory.</div>
+        <div class="keys"><span class="key-chip">schema-on-read</span><span class="key-chip">schema-on-write</span><span class="key-chip">data swamp</span></div>
+        <div class="teach-it">A Data Lake stores everything as-is — photos, files, JSON, CSV. A Data Warehouse only stores clean, organized, structured data ready for questions.</div>
+      </div>
+      <div class="spaced-repeat">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
 
   </div>
-</div><!-- end chapter-0 -->
+</section>
 
+<div class="pull-quote-section">
+  <blockquote>"In data warehousing, the architecture you choose determines the questions you can answer — and how fast you can answer them."</blockquote>
+  <cite>Chapter 1 — Foundations Insight</cite>
+</div>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- CHAPTER II — THE PATTERNS                                    -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<div class="chapter-page" id="chapter-1">
-  <div class="container">
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- CHAPTER 2: SNOWFLAKE ARCHITECTURE -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section id="ch2">
+  <div class="chapter-header">
+    <div class="chapter-num">Chapter 02</div>
+    <h2>Snowflake Architecture</h2>
+    <p>How Snowflake separates storage from compute and scales independently</p>
+  </div>
 
-    <div class="hero-band">
-      <span class="chapter-label">Chapter II — The Patterns</span>
-      <h2 class="hero-headline">Context Manager, <em>Reading &amp; Writing</em></h2>
-      <p class="hero-intro">The <code>with</code> statement is the single most important pattern in file handling. Layer on top of it the five reading strategies and the three writing methods, and you can handle almost any file task correctly.</p>
-      <span class="section-count">Covers § 3 · § 4 · § 5</span>
-    </div>
+  <div class="card-grid">
 
-    <!-- §3 Context Manager -->
-    <div class="article-section">
-      <p class="section-kicker">§ 3 — Context Manager</p>
-      <h3 class="section-headline">The <code>with</code> Statement: Your Safety Net</h3>
-      <div class="section-body">
-        <p>The context manager is Python's answer to "what if an error happens before I call close()?" It guarantees the file is closed regardless — success or exception. Think of it as a try/finally block that Python writes for you, invisibly.</p>
-      </div>
-
-      <div class="pull-quote">
-        <p>"<code>with open(…)</code> is not a style choice. It is the correct way to open files. Every other way is a bug waiting for bad luck."</p>
-        <cite>§ 3 — Context Manager</cite>
-      </div>
-
-      <div class="two-col">
-        <div class="col-card">
-          <p class="col-card-title" style="color:var(--accent-hot)">❌ Wrong Way</p>
-          <div class="code-block" style="margin:0">
-            <pre style="font-size:0.77rem">f = <span class="cm">open</span>(<span class="cs">"file.txt"</span>)
-data = f.<span class="cm">read</span>()
-<span class="cc"># If read() crashes,</span>
-<span class="cc"># close() is never called</span>
-f.<span class="cm">close</span>()</pre>
-          </div>
-        </div>
-        <div class="col-card">
-          <p class="col-card-title" style="color:#5a9e6f">✅ Right Way</p>
-          <div class="code-block" style="margin:0">
-            <pre style="font-size:0.77rem"><span class="ck">with</span> <span class="cm">open</span>(<span class="cs">"file.txt"</span>) <span class="ck">as</span> f:
-    data = f.<span class="cm">read</span>()
-<span class="cc"># Closed automatically here,</span>
-<span class="cc"># even if read() raised</span></pre>
-          </div>
+    <!-- CARD 5: Snowflake Basics -->
+    <article class="rcard">
+      <div class="rcard-header">
+        <div class="rcard-num">05</div>
+        <div>
+          <div class="rcard-title">Snowflake Overview</div>
+          <div class="rcard-tag">Snowflake</div>
         </div>
       </div>
-
-      <div class="section-body" style="margin-top:24px">
-        <p>You can open multiple files in one <code>with</code> statement — useful for copy operations:</p>
-      </div>
-
-      <div class="code-block">
-        <div class="code-header">
-          <div class="code-dot cd-r"></div><div class="code-dot cd-y"></div><div class="code-dot cd-g"></div>
-          <span class="code-filename">multi_file.py</span>
+      <div class="rcard-body">
+        <div class="hook">"Snowflake is not a database. It's a cloud-native data platform that separates what you store from how you compute."</div>
+        <div class="mental-model">
+          <div class="before"><span>Before:</span> Snowflake is just another cloud SQL database.</div>
+          <div class="after"><span>After:</span> Snowflake has 3 layers: Cloud Services (brain), Query Processing (virtual warehouses), and Storage (columnar, S3/Azure/GCS) — all independent.</div>
         </div>
-        <pre><span class="cc"># Both files closed automatically, even on error</span>
-<span class="ck">with</span> <span class="cm">open</span>(<span class="cs">"in.txt"</span>) <span class="ck">as</span> src, <span class="cm">open</span>(<span class="cs">"out.txt"</span>, <span class="cs">"w"</span>) <span class="ck">as</span> dst:
-    dst.<span class="cm">write</span>(src.<span class="cm">read</span>())</pre>
+        <div class="warning">⚠️ You pay for storage and compute separately — a warehouse sitting idle still costs nothing, unlike traditional databases.</div>
+        <div class="keys"><span class="key-chip">3-layer architecture</span><span class="key-chip">columnar storage</span><span class="key-chip">multi-cluster</span></div>
+        <div class="teach-it">Snowflake is like renting a kitchen (compute) separately from the pantry (storage) — you only pay for the kitchen when you're actually cooking.</div>
       </div>
-    </div>
-
-    <!-- §4 Reading -->
-    <div class="article-section">
-      <p class="section-kicker">§ 4 — Reading Text</p>
-      <h3 class="section-headline">Five Ways to Read — One Winner</h3>
-      <div class="section-body">
-        <p>Python gives you five reading patterns. For most real-world work — especially large files — only one is appropriate. Knowing which to pick prevents memory exhaustion and hard-to-debug bugs.</p>
-      </div>
-
-      <ul class="pattern-list">
-        <li>
-          <span class="pattern-tag">f.read()</span>
-          <span class="pattern-desc">Entire file as one big string. Loads everything into memory. Fine for small files, dangerous for large ones.</span>
-        </li>
-        <li>
-          <span class="pattern-tag">f.readline()</span>
-          <span class="pattern-desc">One line per call. You control iteration manually. Rarely needed — the <code>for</code> loop is cleaner.</span>
-        </li>
-        <li>
-          <span class="pattern-tag">f.readlines()</span>
-          <span class="pattern-desc">Returns a list of all lines. Loads everything into memory. Same caveat as <code>.read()</code> — avoid on large files.</span>
-        </li>
-        <li>
-          <span class="pattern-tag">for line in f</span>
-          <span class="pattern-desc pattern-best">★ BEST for large files. Python streams one line at a time — constant memory, no matter how big the file.</span>
-        </li>
-        <li>
-          <span class="pattern-tag">f.read(n)</span>
-          <span class="pattern-desc">Read exactly <code>n</code> characters. Used for binary chunking or fixed-width parsing.</span>
-        </li>
-      </ul>
-
-      <div class="code-block">
-        <div class="code-header">
-          <div class="code-dot cd-r"></div><div class="code-dot cd-y"></div><div class="code-dot cd-g"></div>
-          <span class="code-filename">filter_names.py</span>
-        </div>
-        <pre><span class="cc"># Filter names containing 'a' — streaming, memory-safe</span>
-<span class="ck">with</span> <span class="cm">open</span>(<span class="cs">"names.txt"</span>, encoding=<span class="cs">"utf-8"</span>) <span class="ck">as</span> f:
-    <span class="ck">for</span> line <span class="ck">in</span> f:
-        <span class="ck">if</span> <span class="cs">'a'</span> <span class="ck">in</span> line:
-            <span class="cm">print</span>(line.<span class="cm">strip</span>())  <span class="cc"># strip() removes trailing \n</span>
-
-<span class="cc"># Output: alice, carol, dave  (bob skipped)</span>
-<span class="cc"># Note: every line from a file includes \n — always .strip()</span></pre>
-      </div>
-
-      <div class="tip-box">
-        <span class="tip-icon">💡</span>
-        <div class="tip-content">
-          <strong>Strip Your Lines</strong>
-          <p>Every line read from a text file includes a trailing <code>\n</code> character. Call <code>line.strip()</code> to remove leading and trailing whitespace, or <code>line.rstrip('\n')</code> to remove only the newline.</p>
+      <div class="spaced-repeat">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
         </div>
       </div>
-    </div>
+    </article>
 
-    <!-- §5 Writing -->
-    <div class="article-section">
-      <p class="section-kicker">§ 5 — Writing Text</p>
-      <h3 class="section-headline">Three Writing Methods: Know Your Newlines</h3>
-      <div class="section-body">
-        <p>The main source of bugs when writing files is newline handling. Each method treats newlines differently — pick the wrong one and you either miss line breaks or double them.</p>
-      </div>
-
-      <ul class="pattern-list">
-        <li>
-          <span class="pattern-tag">f.write(s)</span>
-          <span class="pattern-desc">Writes the string exactly as given. <strong>You must supply the newline</strong> — Python won't add one. Write <code>f.write("hello\n")</code> not <code>f.write("hello")</code>.</span>
-        </li>
-        <li>
-          <span class="pattern-tag">f.writelines(lst)</span>
-          <span class="pattern-desc">Writes each item from the list. <strong>Does NOT add newlines</strong> between items. Each string in the list must already contain <code>\n</code>.</span>
-        </li>
-        <li>
-          <span class="pattern-tag">print(…, file=f)</span>
-          <span class="pattern-desc"><strong>Adds a newline automatically.</strong> Cleanest for human-readable line-by-line output. Familiar syntax, no newline management needed.</span>
-        </li>
-      </ul>
-
-      <div class="code-block">
-        <div class="code-header">
-          <div class="code-dot cd-r"></div><div class="code-dot cd-y"></div><div class="code-dot cd-g"></div>
-          <span class="code-filename">write_cities.py</span>
+    <!-- CARD 6: Snowflake Architecture Layers -->
+    <article class="rcard">
+      <div class="rcard-header">
+        <div class="rcard-num">06</div>
+        <div>
+          <div class="rcard-title">Snowflake's 3-Layer Architecture</div>
+          <div class="rcard-tag">Snowflake</div>
         </div>
-        <pre><span class="cc"># Using print(file=f) — automatic newlines, cleanest syntax</span>
-<span class="ck">with</span> <span class="cm">open</span>(<span class="cs">"cities.txt"</span>, <span class="cs">"w"</span>, encoding=<span class="cs">"utf-8"</span>) <span class="ck">as</span> f:
-    <span class="cm">print</span>(<span class="cs">"london"</span>, file=f)
-    <span class="cm">print</span>(<span class="cs">"paris"</span>,  file=f)
-    <span class="cm">print</span>(<span class="cs">"tokyo"</span>,  file=f)
-
-<span class="cc"># Using f.write() — you supply the \n</span>
-<span class="ck">with</span> <span class="cm">open</span>(<span class="cs">"cities.txt"</span>, <span class="cs">"w"</span>, encoding=<span class="cs">"utf-8"</span>) <span class="ck">as</span> f:
-    f.<span class="cm">write</span>(<span class="cs">"london\n"</span>)   <span class="cc"># \n required</span>
-    f.<span class="cm">write</span>(<span class="cs">"paris\n"</span>)
-    f.<span class="cm">write</span>(<span class="cs">"tokyo\n"</span>)
-
-<span class="cc"># Using f.writelines() — items must contain \n already</span>
-cities = [<span class="cs">"london\n"</span>, <span class="cs">"paris\n"</span>, <span class="cs">"tokyo\n"</span>]
-<span class="ck">with</span> <span class="cm">open</span>(<span class="cs">"cities.txt"</span>, <span class="cs">"w"</span>, encoding=<span class="cs">"utf-8"</span>) <span class="ck">as</span> f:
-    f.<span class="cm">writelines</span>(cities)</pre>
       </div>
-    </div>
+      <div class="rcard-body">
+        <div class="hook">"Storage is forever. Compute is on-demand. Cloud Services is always-on intelligence."</div>
+        <div class="mental-model">
+          <div class="before"><span>Before:</span> All three layers must be scaled together like traditional DBs.</div>
+          <div class="after"><span>After:</span> Cloud Services (metadata, auth, optimizer) runs always. Virtual Warehouses spin up/down. Storage persists independently in cloud object stores.</div>
+        </div>
+        <div class="warning">⚠️ Cloud Services layer queries (metadata-only, < 10% of credits) don't consume warehouse credits — but heavy queries to it can still be charged.</div>
+        <div class="keys"><span class="key-chip">cloud services</span><span class="key-chip">virtual warehouse</span><span class="key-chip">centralized storage</span></div>
+        <div class="teach-it">Imagine: a permanent warehouse (storage), a team of workers you hire only when needed (virtual warehouse), and a manager who's always in the office for free (cloud services).</div>
+      </div>
+      <div class="spaced-repeat">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- CARD 7: Virtual Warehouses -->
+    <article class="rcard">
+      <div class="rcard-header">
+        <div class="rcard-num">07</div>
+        <div>
+          <div class="rcard-title">Virtual Warehouses &amp; Sizing</div>
+          <div class="rcard-tag">Compute</div>
+        </div>
+      </div>
+      <div class="rcard-body">
+        <div class="hook">"A Virtual Warehouse is your compute cluster — sizes go XS to 6XL, each doubling in power and cost."</div>
+        <div class="mental-model">
+          <div class="before"><span>Before:</span> Bigger warehouse = always faster queries.</div>
+          <div class="after"><span>After:</span> Bigger warehouse speeds up single query execution (scale up). Multi-cluster handles concurrency (scale out). Wrong choice wastes credits.</div>
+        </div>
+        <div class="warning">⚠️ Auto-suspend is your best friend — set it to 60–300 seconds or you'll burn credits on idle compute all day.</div>
+        <div class="keys"><span class="key-chip">scale up vs out</span><span class="key-chip">auto-suspend</span><span class="key-chip">credits/hour</span></div>
+        <div class="teach-it">Size is like hiring more workers for one big job. Multi-cluster is like opening more checkout lanes when the store gets busy.</div>
+      </div>
+      <div class="spaced-repeat">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- CARD 8: Cache & Clustering -->
+    <article class="rcard">
+      <div class="rcard-header">
+        <div class="rcard-num">08</div>
+        <div>
+          <div class="rcard-title">Caching &amp; Micro-Partitions</div>
+          <div class="rcard-tag">Performance</div>
+        </div>
+      </div>
+      <div class="rcard-body">
+        <div class="hook">"Snowflake has 3 caches — each one faster and cheaper than hitting storage."</div>
+        <div class="mental-model">
+          <div class="before"><span>Before:</span> Every query goes to disk — performance depends only on warehouse size.</div>
+          <div class="after"><span>After:</span> Result Cache (24h, free) → Local Disk Cache (warehouse SSD) → Remote Storage. Micro-partitions + clustering keys prune irrelevant data automatically.</div>
+        </div>
+        <div class="warning">⚠️ Result cache is invalidated if the underlying data changes — repeated identical queries on changing tables won't cache.</div>
+        <div class="keys"><span class="key-chip">result cache</span><span class="key-chip">micro-partitions</span><span class="key-chip">partition pruning</span></div>
+        <div class="teach-it">If you asked Snowflake the same question yesterday and nothing changed, it hands you the same answer instantly — no work needed.</div>
+      </div>
+      <div class="spaced-repeat">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
 
   </div>
-</div><!-- end chapter-1 -->
+</section>
 
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- CHAPTER 3: DIMENSIONAL MODELING -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section id="ch3">
+  <div class="chapter-header">
+    <div class="chapter-num">Chapter 03</div>
+    <h2>Dimensional Modeling</h2>
+    <p>Star schema, fact &amp; dimension tables, surrogate keys, and schema types</p>
+  </div>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- CHAPTER III — DETAILS & RECALL                              -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<div class="chapter-page" id="chapter-2">
-  <div class="container">
+  <div class="card-grid">
 
-    <div class="hero-band">
-      <span class="chapter-label">Chapter III — The Details &amp; Recall</span>
-      <h2 class="hero-headline">Binary, Encoding &amp; <em>The Recall Card</em></h2>
-      <p class="hero-intro">The last two conceptual sections — when to switch to bytes, and why UTF-8 must be explicit — plus the Golden Rules checklist and your personal Recall Trigger Card.</p>
-      <span class="section-count">Covers § 6 · § 7 · Rules · Recall Card</span>
-    </div>
-
-    <!-- §6 Binary vs Text -->
-    <div class="article-section">
-      <p class="section-kicker">§ 6 — Text vs Binary Mode</p>
-      <h3 class="section-headline">Two Worlds, One Wrong Choice</h3>
-      <div class="section-body">
-        <p>Python's file system operates in two fundamentally different modes. Picking the wrong one for your content type doesn't raise an error — it silently corrupts your file.</p>
-      </div>
-
-      <div class="two-col">
-        <div class="col-card">
-          <p class="col-card-title">Text Mode <code style="font-size:0.8rem">'t'</code> (default)</p>
-          <ul>
-            <li>Returns <span>str</span></li>
-            <li>Translates <span>\r\n → \n</span></li>
-            <li>Requires <span>encoding</span></li>
-            <li>Use for <span>.txt, .csv, .json, .py</span></li>
-          </ul>
-        </div>
-        <div class="col-card">
-          <p class="col-card-title">Binary Mode <code style="font-size:0.8rem">'b'</code></p>
-          <ul>
-            <li>Returns <span>bytes</span></li>
-            <li>No newline translation</li>
-            <li>No encoding arg</li>
-            <li>Use for <span>.png, .pdf, .zip, .exe</span></li>
-          </ul>
+    <!-- CARD 9: Dimensional Modeling -->
+    <article class="rcard">
+      <div class="rcard-header">
+        <div class="rcard-num">09</div>
+        <div>
+          <div class="rcard-title">Dimensional Modeling Basics</div>
+          <div class="rcard-tag">Modeling</div>
         </div>
       </div>
-
-      <div class="warn-box">
-        <span class="warn-icon">💥</span>
-        <div class="warn-content">
-          <strong>The Image Corruption Trap</strong>
-          <p>Opening a <code>.png</code> or any binary file in text mode corrupts it. Python's text layer translates byte sequences that look like line endings — destroying the binary structure. Always use <code>'rb'</code> / <code>'wb'</code> for non-text files.</p>
+      <div class="rcard-body">
+        <div class="hook">"Facts measure what happened. Dimensions describe who, what, when, where."</div>
+        <div class="mental-model">
+          <div class="before"><span>Before:</span> Just normalize everything into 3NF like in OLTP.</div>
+          <div class="after"><span>After:</span> Dimensional modeling uses Fact tables (metrics, FK references) + Dimension tables (descriptive attributes) for fast, intuitive analytics.</div>
+        </div>
+        <div class="warning">⚠️ Don't put measures in dimension tables or descriptive attributes in fact tables — keep the roles clean.</div>
+        <div class="keys"><span class="key-chip">fact table</span><span class="key-chip">dimension table</span><span class="key-chip">grain</span></div>
+        <div class="teach-it">A sale happened (fact): $50, 2 items. WHO bought it (customer dimension), WHAT was sold (product dimension), WHEN (date dimension).</div>
+      </div>
+      <div class="spaced-repeat">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
         </div>
       </div>
+    </article>
 
-      <div class="code-block">
-        <div class="code-header">
-          <div class="code-dot cd-r"></div><div class="code-dot cd-y"></div><div class="code-dot cd-g"></div>
-          <span class="code-filename">binary_copy.py</span>
-        </div>
-        <pre><span class="cc"># Safe binary copy — preserves every byte exactly</span>
-<span class="ck">with</span> <span class="cm">open</span>(<span class="cs">"image.png"</span>, <span class="cs">"rb"</span>) <span class="ck">as</span> src:
-    data = src.<span class="cm">read</span>()  <span class="cc"># returns bytes, not str</span>
-
-<span class="ck">with</span> <span class="cm">open</span>(<span class="cs">"image_copy.png"</span>, <span class="cs">"wb"</span>) <span class="ck">as</span> dst:
-    dst.<span class="cm">write</span>(data)
-
-<span class="cc"># Or in one block:</span>
-<span class="ck">with</span> <span class="cm">open</span>(<span class="cs">"in.png"</span>, <span class="cs">"rb"</span>) <span class="ck">as</span> s, <span class="cm">open</span>(<span class="cs">"out.png"</span>, <span class="cs">"wb"</span>) <span class="ck">as</span> d:
-    d.<span class="cm">write</span>(s.<span class="cm">read</span>())</pre>
-      </div>
-    </div>
-
-    <!-- §7 Encoding -->
-    <div class="article-section">
-      <p class="section-kicker">§ 7 — Encoding</p>
-      <h3 class="section-headline">UTF-8 Is Not the Default (On Windows)</h3>
-      <div class="section-body">
-        <p>This is one of the most common portability bugs in Python. When you omit the <code>encoding</code> argument, Python uses the platform's locale default — <code>cp1252</code> on many Windows systems, <code>UTF-8</code> on Linux/Mac. Code that works on your machine silently breaks on a colleague's.</p>
-        <p>The rule is simple: <strong>always specify <code>encoding='utf-8'</code> explicitly</strong>. No exceptions for text files.</p>
-      </div>
-
-      <div class="pull-quote">
-        <p>"<code>encoding='utf-8'</code> is not optional pedantry. It is the difference between code that works everywhere and code that breaks on deployment."</p>
-        <cite>§ 7 — Encoding</cite>
-      </div>
-
-      <div class="code-block">
-        <div class="code-header">
-          <div class="code-dot cd-r"></div><div class="code-dot cd-y"></div><div class="code-dot cd-g"></div>
-          <span class="code-filename">encoding_examples.py</span>
-        </div>
-        <pre><span class="cc"># Always explicit — works the same on all platforms</span>
-<span class="ck">with</span> <span class="cm">open</span>(<span class="cs">"drinks.txt"</span>, <span class="cs">"w"</span>, encoding=<span class="cs">"utf-8"</span>) <span class="ck">as</span> f:
-    f.<span class="cm">write</span>(<span class="cs">"café au lait\n"</span>)   <span class="cc"># é survives correctly</span>
-
-<span class="cc"># Error handling options for bad bytes</span>
-<span class="ck">with</span> <span class="cm">open</span>(<span class="cs">"messy.txt"</span>, encoding=<span class="cs">"utf-8"</span>, errors=<span class="cs">"replace"</span>) <span class="ck">as</span> f:
-    data = f.<span class="cm">read</span>()   <span class="cc"># bad bytes → replacement char (safe)</span>
-
-<span class="ck">with</span> <span class="cm">open</span>(<span class="cs">"messy.txt"</span>, encoding=<span class="cs">"utf-8"</span>, errors=<span class="cs">"ignore"</span>) <span class="ck">as</span> f:
-    data = f.<span class="cm">read</span>()   <span class="cc"># bad bytes silently dropped</span>
-
-<span class="cc"># Excel CSV trap — Excel writes a BOM marker at start</span>
-<span class="ck">with</span> <span class="cm">open</span>(<span class="cs">"export.csv"</span>, encoding=<span class="cs">"utf-8-sig"</span>) <span class="ck">as</span> f:
-    data = f.<span class="cm">read</span>()   <span class="cc"># utf-8-sig strips the BOM automatically</span></pre>
-      </div>
-
-      <div class="tip-box">
-        <span class="tip-icon">📊</span>
-        <div class="tip-content">
-          <strong>Excel CSV Trap</strong>
-          <p>CSVs exported from Excel often begin with a BOM (Byte Order Mark) character. Use <code>encoding='utf-8-sig'</code> instead of plain <code>'utf-8'</code> to strip it automatically — otherwise you'll see a mysterious <code>ï»¿</code> at the start of your first field.</p>
+    <!-- CARD 10: Star vs Snowflake Schema -->
+    <article class="rcard">
+      <div class="rcard-header">
+        <div class="rcard-num">10</div>
+        <div>
+          <div class="rcard-title">Star vs Snowflake Schema</div>
+          <div class="rcard-tag">Modeling</div>
         </div>
       </div>
-    </div>
-
-    <!-- Golden Rules -->
-    <div class="article-section">
-      <p class="section-kicker">The Golden Rules</p>
-      <h3 class="section-headline">Eight Rules That Prevent Every Common Bug</h3>
-      <div class="section-body">
-        <p>These eight rules were distilled from the session notes. Violate one and you'll almost certainly lose data, corrupt a file, or write non-portable code. Memorise them in order.</p>
+      <div class="rcard-body">
+        <div class="hook">"Star = simple, fast, some redundancy. Snowflake schema = normalized dimensions, more joins."</div>
+        <div class="mental-model">
+          <div class="before"><span>Before:</span> Snowflake schema is always better because it's more normalized.</div>
+          <div class="after"><span>After:</span> Star schema wins for query performance (fewer joins). Snowflake schema reduces redundancy but adds query complexity. Most DWs prefer Star.</div>
+        </div>
+        <div class="warning">⚠️ Don't confuse Snowflake schema (data model) with Snowflake (the cloud platform) — completely different things.</div>
+        <div class="keys"><span class="key-chip">star = denormalized</span><span class="key-chip">snowflake = normalized</span><span class="key-chip">join depth</span></div>
+        <div class="teach-it">Star schema: fact table in the middle, dimension tables around it like a star. Snowflake schema: dimensions are further split into sub-dimensions.</div>
       </div>
-
-      <div class="golden-rules-grid">
-        <div class="rule-card">
-          <div class="rule-number">1</div>
-          <div class="rule-icon">🔒</div>
-          <div class="rule-title">Always use with open()</div>
-          <div class="rule-text">The context manager guarantees the file is closed — even on exceptions. No exceptions to this rule.</div>
-        </div>
-        <div class="rule-card">
-          <div class="rule-number">2</div>
-          <div class="rule-icon">🌐</div>
-          <div class="rule-title">Always specify encoding</div>
-          <div class="rule-text">Write <span class="rule-code">encoding='utf-8'</span> on every text file open. Platform defaults differ. UTF-8 is universal.</div>
-        </div>
-        <div class="rule-card">
-          <div class="rule-number">3</div>
-          <div class="rule-icon">🖼</div>
-          <div class="rule-title">Use 'b' for non-text</div>
-          <div class="rule-text">Images, PDFs, ZIPs, executables — anything that isn't plain text requires binary mode to avoid corruption.</div>
-        </div>
-        <div class="rule-card">
-          <div class="rule-number">4</div>
-          <div class="rule-icon">📋</div>
-          <div class="rule-title">newline='' with CSV</div>
-          <div class="rule-text">When using the <span class="rule-code">csv</span> module, open with <span class="rule-code">newline=''</span> to prevent double line-ending insertion.</div>
-        </div>
-        <div class="rule-card">
-          <div class="rule-number">5</div>
-          <div class="rule-icon">🌊</div>
-          <div class="rule-title">Iterate large files</div>
-          <div class="rule-text">For large files, use <span class="rule-code">for line in f</span>. Never <span class="rule-code">.read()</span> or <span class="rule-code">.readlines()</span> on files that may not fit in memory.</div>
-        </div>
-        <div class="rule-card">
-          <div class="rule-number">6</div>
-          <div class="rule-icon">⚛️</div>
-          <div class="rule-title">Atomic writes for critical output</div>
-          <div class="rule-text">Write to a temp file, <span class="rule-code">fsync()</span>, then <span class="rule-code">rename()</span>. A crash mid-write won't corrupt the real file.</div>
-        </div>
-        <div class="rule-card">
-          <div class="rule-number">7</div>
-          <div class="rule-icon">🛡</div>
-          <div class="rule-title">Use 'x' to protect outputs</div>
-          <div class="rule-text">For outputs you must never overwrite, use <span class="rule-code">'x'</span> mode. It raises <span class="rule-code">FileExistsError</span> rather than silently erasing data.</div>
-        </div>
-        <div class="rule-card">
-          <div class="rule-number">8</div>
-          <div class="rule-icon">📊</div>
-          <div class="rule-title">utf-8-sig for Excel CSVs</div>
-          <div class="rule-text">Use <span class="rule-code">encoding='utf-8-sig'</span> when reading Excel-exported CSVs to automatically strip the BOM character.</div>
+      <div class="spaced-repeat">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
         </div>
       </div>
-    </div>
+    </article>
 
-    <!-- Pending Sections -->
-    <div class="pending-section">
-      <p class="section-kicker">Coming Next</p>
-      <h3 class="section-headline" style="font-size:1.3rem">Sections Still Ahead</h3>
-      <p style="color:var(--muted);font-size:0.9rem;margin-top:8px">The following sections from the original Field Manual are scheduled for upcoming sessions:</p>
-      <div class="pending-grid">
-        <span class="pending-chip">§ 8 — seek & tell</span>
-        <span class="pending-chip">§ 9 — CSV module</span>
-        <span class="pending-chip">§ 10 — JSON</span>
-        <span class="pending-chip">§ 11 — Streaming large files</span>
-        <span class="pending-chip">§ 12 — Atomic writes</span>
-        <span class="pending-chip">§ 13 — pathlib helpers</span>
-        <span class="pending-chip">§ 14 — Common exceptions</span>
-        <span class="pending-chip">§ 15 — Tiny utilities</span>
-        <span class="pending-chip">§ 16 — Anti-patterns</span>
-        <span class="pending-chip">§ 17 — Cheat-sheet</span>
-      </div>
-    </div>
-
-    <!-- RECALL TRIGGER CARD -->
-    <div class="recall-card">
-      <span class="recall-badge">📇 Recall Trigger Card</span>
-      <h3 class="recall-title">Python File Handling — Sections 0 through 7</h3>
-
-      <div class="recall-hook">
-        <p>"A file is a pipe. If you leave it open, you flood the kitchen — and your data sits in the buffer like uncommitted cash, never reaching the bank."</p>
-      </div>
-
-      <p class="recall-section-label">Trigger Questions — Ask, Don't Read</p>
-      <ul class="recall-questions">
-        <li>In one sentence: why do we use <code>with open()</code> instead of calling <code>close()</code> manually?</li>
-        <li>What is the difference between <code>'w'</code> and <code>'a'</code> mode? When would each destroy your data?</li>
-        <li>Name the one reading pattern that is safe for files of any size. Why are the others dangerous?</li>
-        <li>What breaks if you open a <code>.png</code> in text mode? Why?</li>
-        <li>What happens to <code>café</code> if you write it without specifying <code>encoding='utf-8'</code> on Windows?</li>
-        <li>When would you use <code>'x'</code> mode, and what error does it raise?</li>
-      </ul>
-
-      <p class="recall-section-label">Mental Model — Before → After</p>
-      <div class="recall-belief">
-        <div class="belief-before">
-          <div class="belief-label">Old Belief</div>
-          "open() just opens a file — I can call close() at the bottom of the function, it'll be fine."
-        </div>
-        <div class="belief-after">
-          <div class="belief-label">New Belief</div>
-          "open() allocates a system resource. <code>with</code> guarantees it's returned — even if an exception fires. Anything else is a bug waiting for bad luck."
+    <!-- CARD 11: Fact Table Types -->
+    <article class="rcard">
+      <div class="rcard-header">
+        <div class="rcard-num">11</div>
+        <div>
+          <div class="rcard-title">Types of Fact Tables</div>
+          <div class="rcard-tag">Modeling</div>
         </div>
       </div>
-
-      <p class="recall-section-label">Retrieval Keys</p>
-      <div class="recall-keys">
-        <span class="recall-key">with open() — always</span>
-        <span class="recall-key">encoding='utf-8' — always</span>
-        <span class="recall-key">'b' for binary · 'x' to protect</span>
+      <div class="rcard-body">
+        <div class="hook">"Transaction = snapshot in time. Periodic = end of period. Accumulating = lifecycle of a process."</div>
+        <div class="mental-model">
+          <div class="before"><span>Before:</span> There's only one kind of fact table — just rows of events.</div>
+          <div class="after"><span>After:</span> Transaction (each event), Periodic Snapshot (state at regular intervals), Accumulating Snapshot (one row per process lifecycle, updated as it progresses).</div>
+        </div>
+        <div class="warning">⚠️ Accumulating snapshots violate "append-only" — rows get updated as pipeline stages complete. Design for this explicitly.</div>
+        <div class="keys"><span class="key-chip">transaction</span><span class="key-chip">periodic snapshot</span><span class="key-chip">accumulating snapshot</span></div>
+        <div class="teach-it">Order placed → shipped → delivered: one row in accumulating snapshot, updated at each stage. Monthly inventory: periodic snapshot. Each sale: transaction fact.</div>
       </div>
-
-      <p class="recall-section-label">Warning Label</p>
-      <div class="recall-warn">
-        ⚠️ &nbsp;<strong>'w' mode erases the file the instant you open it</strong> — before you write a single byte. Use <code>'a'</code> to append safely or <code>'x'</code> to fail gracefully if the file already exists.
+      <div class="spaced-repeat">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
       </div>
+    </article>
 
-      <p class="recall-section-label">Spaced Repeat Schedule</p>
-      <div class="recall-schedule">
-        <div class="sched-item">Review in 1 day</div>
-        <div class="sched-item">Review in 3 days</div>
-        <div class="sched-item">Review in 1 week</div>
-        <div class="sched-item">Review in 1 month</div>
+    <!-- CARD 12: Dimension Table Types -->
+    <article class="rcard">
+      <div class="rcard-header">
+        <div class="rcard-num">12</div>
+        <div>
+          <div class="rcard-title">Types of Dimension Tables</div>
+          <div class="rcard-tag">Modeling</div>
+        </div>
       </div>
-
-      <p class="recall-section-label">Teach-It Test</p>
-      <div class="recall-teach">
-        "When you open a file in Python, you're borrowing a numbered slot from the operating system — and you MUST give it back. The <code>with</code> keyword is a magical helper that always gives it back, even if something goes wrong midway. Without it, you can run out of slots, or your data never makes it to disk."
+      <div class="rcard-body">
+        <div class="hook">"Conformed = shared. Junk = low-cardinality flags. Degenerate = the order number on the receipt."</div>
+        <div class="mental-model">
+          <div class="before"><span>Before:</span> Dimensions are just lookup tables with an ID and description.</div>
+          <div class="after"><span>After:</span> Conformed (shared across facts), Junk (combined flag/indicator dim), Degenerate (key stored directly in fact), Role-playing (same dim used twice with aliases).</div>
+        </div>
+        <div class="warning">⚠️ Role-playing dimensions need VIEW aliases — never physically duplicate the table.</div>
+        <div class="keys"><span class="key-chip">conformed</span><span class="key-chip">junk</span><span class="key-chip">degenerate</span></div>
+        <div class="teach-it">The Date dimension is conformed — used by Sales facts, HR facts, Inventory facts. Order number on a receipt is degenerate — stored in the fact, not its own table.</div>
       </div>
-    </div>
+      <div class="spaced-repeat">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
 
-  </div><!-- end container -->
-</div><!-- end chapter-2 -->
+    <!-- CARD 13: Natural vs Surrogate Keys -->
+    <article class="rcard">
+      <div class="rcard-header">
+        <div class="rcard-num">13</div>
+        <div>
+          <div class="rcard-title">Natural vs Surrogate Keys</div>
+          <div class="rcard-tag">Modeling</div>
+        </div>
+      </div>
+      <div class="rcard-body">
+        <div class="hook">"Natural key = the business ID. Surrogate key = the DW's own ID. Always use surrogate keys in DW."</div>
+        <div class="mental-model">
+          <div class="before"><span>Before:</span> Just use the business ID (email, product code) as the PK — it's already unique.</div>
+          <div class="after"><span>After:</span> Surrogate keys (auto-generated integers) protect against source system changes, allow SCD tracking, and improve join performance.</div>
+        </div>
+        <div class="warning">⚠️ Never expose surrogate keys to end users — they're internal DW plumbing with no business meaning.</div>
+        <div class="keys"><span class="key-chip">surrogate = system-generated</span><span class="key-chip">natural = business key</span><span class="key-chip">SCD compatibility</span></div>
+        <div class="teach-it">Your employee ID is the natural key. The DW assigns its own secret number (surrogate key) so even if the employee ID changes, history is preserved.</div>
+      </div>
+      <div class="spaced-repeat">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
 
+  </div>
+</section>
+
+<div class="pull-quote-section">
+  <blockquote>"Slowly Changing Dimensions are the hardest concept to get right — and the most critical to get right for historical accuracy."</blockquote>
+  <cite>Chapter 4 — ETL & SCDs Insight</cite>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- CHAPTER 4: ETL, SCDs & LOADING -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section id="ch4">
+  <div class="chapter-header">
+    <div class="chapter-num">Chapter 04</div>
+    <h2>ETL, SCDs &amp; Data Loading</h2>
+    <p>Slowly Changing Dimensions, staging, file formats, and COPY INTO</p>
+  </div>
+
+  <div class="card-grid">
+
+    <!-- CARD 14: SCD Types -->
+    <article class="rcard">
+      <div class="rcard-header">
+        <div class="rcard-num">14</div>
+        <div>
+          <div class="rcard-title">SCD Type 1, 2, 3, 6</div>
+          <div class="rcard-tag">SCDs</div>
+        </div>
+      </div>
+      <div class="rcard-body">
+        <div class="hook">"Type 1 = overwrite (forget). Type 2 = new row (remember everything). Type 3 = previous column (remember one change). Type 6 = hybrid."</div>
+        <div class="mental-model">
+          <div class="before"><span>Before:</span> Just update the record when something changes — no need to keep history.</div>
+          <div class="after"><span>After:</span> Type 1 loses history. Type 2 adds new row with effective dates + is_current flag. Type 3 adds old/new column. Type 6 = 1+2+3 combined.</div>
+        </div>
+        <div class="warning">⚠️ SCD Type 2 requires surrogate keys — you can't have two rows with the same natural key as PK.</div>
+        <div class="keys"><span class="key-chip">effective_date</span><span class="key-chip">is_current</span><span class="key-chip">expiry_date</span></div>
+        <div class="teach-it">Customer moves cities. Type 1: update city field. Type 2: keep old row, add new row. Type 3: add "previous_city" column. Type 6: all of the above.</div>
+      </div>
+      <div class="spaced-repeat">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- CARD 15: Stage & COPY INTO -->
+    <article class="rcard">
+      <div class="rcard-header">
+        <div class="rcard-num">15</div>
+        <div>
+          <div class="rcard-title">Stages &amp; COPY INTO</div>
+          <div class="rcard-tag">Data Loading</div>
+        </div>
+      </div>
+      <div class="rcard-body">
+        <div class="hook">"A Stage is a landing zone. COPY INTO is the loader. Together they replace most ETL tools."</div>
+        <div class="mental-model">
+          <div class="before"><span>Before:</span> Load files directly from local disk into Snowflake.</div>
+          <div class="after"><span>After:</span> PUT files → Internal Stage (Snowflake-managed) OR use External Stage (S3/Azure/GCS) → COPY INTO table. Stages are temporary file storage.</div>
+        </div>
+        <div class="warning">⚠️ COPY INTO is idempotent by default (tracks loaded files) — re-running won't duplicate data unless you use FORCE=TRUE.</div>
+        <div class="keys"><span class="key-chip">internal stage</span><span class="key-chip">external stage</span><span class="key-chip">COPY INTO</span></div>
+        <div class="teach-it">You put your CSV on a loading dock (stage), then tell Snowflake to move it into the warehouse (COPY INTO). Snowflake remembers which files it already loaded.</div>
+      </div>
+      <div class="spaced-repeat">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- CARD 16: File Formats -->
+    <article class="rcard">
+      <div class="rcard-header">
+        <div class="rcard-num">16</div>
+        <div>
+          <div class="rcard-title">File Formats in Snowflake</div>
+          <div class="rcard-tag">Data Loading</div>
+        </div>
+      </div>
+      <div class="rcard-body">
+        <div class="hook">"Parquet = columnar, fast analytics. ORC = Hive-optimized. Avro = row-based, schema evolution. CSV = simplest but slowest."</div>
+        <div class="mental-model">
+          <div class="before"><span>Before:</span> CSV is fine for all data loads — it's universal.</div>
+          <div class="after"><span>After:</span> Parquet/ORC are 2–10x faster for analytics (columnar compression). Avro supports schema evolution. JSON/XML for semi-structured. CSV for simplicity only.</div>
+        </div>
+        <div class="warning">⚠️ Always create a named FILE FORMAT object in Snowflake — don't inline format options in every COPY INTO statement.</div>
+        <div class="keys"><span class="key-chip">Parquet</span><span class="key-chip">columnar</span><span class="key-chip">FILE FORMAT object</span></div>
+        <div class="teach-it">Parquet stores a column of 1 million prices together, so "total revenue" queries only read prices. CSV reads every field in every row — much slower.</div>
+      </div>
+      <div class="spaced-repeat">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- CARD 17: Storage Integration -->
+    <article class="rcard">
+      <div class="rcard-header">
+        <div class="rcard-num">17</div>
+        <div>
+          <div class="rcard-title">Storage Integration</div>
+          <div class="rcard-tag">Security</div>
+        </div>
+      </div>
+      <div class="rcard-body">
+        <div class="hook">"Storage Integration = the secure handshake between Snowflake and your S3/Azure bucket without embedding credentials."</div>
+        <div class="mental-model">
+          <div class="before"><span>Before:</span> Pass AWS access key + secret directly in the stage definition.</div>
+          <div class="after"><span>After:</span> Create STORAGE INTEGRATION object (IAM role trust) → Snowflake gets a managed service account → no secrets in SQL code.</div>
+        </div>
+        <div class="warning">⚠️ Storage Integrations require Account Admin to create — not a task for regular roles.</div>
+        <div class="keys"><span class="key-chip">IAM trust policy</span><span class="key-chip">no credentials in SQL</span><span class="key-chip">STORAGE INTEGRATION</span></div>
+        <div class="teach-it">Instead of giving Snowflake a key to your S3 house, you tell AWS "trust this Snowflake agent" — no key is ever passed around.</div>
+      </div>
+      <div class="spaced-repeat">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- CARD 18: Snowpipe -->
+    <article class="rcard">
+      <div class="rcard-header">
+        <div class="rcard-num">18</div>
+        <div>
+          <div class="rcard-title">Snowpipe — Continuous Loading</div>
+          <div class="rcard-tag">Streaming</div>
+        </div>
+      </div>
+      <div class="rcard-body">
+        <div class="hook">"Snowpipe is event-driven COPY INTO — the moment a file lands in S3, it's loaded automatically."</div>
+        <div class="mental-model">
+          <div class="before"><span>Before:</span> Schedule a COPY INTO job every 15 minutes to check for new files.</div>
+          <div class="after"><span>After:</span> Snowpipe uses S3 Event Notifications → SQS → Snowpipe auto-ingest. Files loaded within seconds, no scheduled jobs needed.</div>
+        </div>
+        <div class="warning">⚠️ Snowpipe uses serverless compute — billed differently from virtual warehouses. Don't mix up cost models.</div>
+        <div class="keys"><span class="key-chip">auto-ingest</span><span class="key-chip">SQS notification</span><span class="key-chip">serverless billing</span></div>
+        <div class="teach-it">Snowpipe watches your S3 bucket. The second a new file appears, it automatically loads it into Snowflake — no one has to push a button.</div>
+      </div>
+      <div class="spaced-repeat">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- CHAPTER 5: ADVANCED SNOWFLAKE -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section id="ch5">
+  <div class="chapter-header">
+    <div class="chapter-num">Chapter 05</div>
+    <h2>Advanced Snowflake Features</h2>
+    <p>Time Travel, Undrop, Table Types, Zero Copy Clone, and Data Recovery</p>
+  </div>
+
+  <div class="card-grid">
+
+    <!-- CARD 19: Time Travel -->
+    <article class="rcard">
+      <div class="rcard-header">
+        <div class="rcard-num">19</div>
+        <div>
+          <div class="rcard-title">Time Travel</div>
+          <div class="rcard-tag">Recovery</div>
+        </div>
+      </div>
+      <div class="rcard-body">
+        <div class="hook">"Time Travel is a DVR for your data — rewind up to 90 days and query what used to be there."</div>
+        <div class="mental-model">
+          <div class="before"><span>Before:</span> Once you DELETE or UPDATE data, it's gone forever unless you have backups.</div>
+          <div class="after"><span>After:</span> Snowflake retains historical data for 0–90 days (Standard: 1 day, Enterprise: 90 days). Query with AT/BEFORE TIMESTAMP or OFFSET.</div>
+        </div>
+        <div class="warning">⚠️ Time Travel storage costs money — longer retention = more storage cost. Set DATA_RETENTION_TIME_IN_DAYS thoughtfully per table.</div>
+        <div class="keys"><span class="key-chip">AT TIMESTAMP</span><span class="key-chip">BEFORE STATEMENT</span><span class="key-chip">retention days</span></div>
+        <div class="teach-it">You accidentally deleted a table. Time Travel lets you go back to yesterday and see exactly what was there — like a database time machine.</div>
+      </div>
+      <div class="spaced-repeat">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- CARD 20: Undrop -->
+    <article class="rcard">
+      <div class="rcard-header">
+        <div class="rcard-num">20</div>
+        <div>
+          <div class="rcard-title">Fail-Safe &amp; UNDROP</div>
+          <div class="rcard-tag">Recovery</div>
+        </div>
+      </div>
+      <div class="rcard-body">
+        <div class="hook">"UNDROP is undo for tables. Fail-Safe is the 7-day vault after Time Travel expires."</div>
+        <div class="mental-model">
+          <div class="before"><span>Before:</span> Dropped tables are gone — only backups can help.</div>
+          <div class="after"><span>After:</span> UNDROP TABLE/SCHEMA/DATABASE restores within Time Travel window. After TT expires, Fail-Safe gives 7 more days — but only Snowflake Support can access it.</div>
+        </div>
+        <div class="warning">⚠️ You cannot query Fail-Safe data yourself — only Snowflake Support can restore it, and it takes time. Don't rely on Fail-Safe for routine recovery.</div>
+        <div class="keys"><span class="key-chip">UNDROP TABLE</span><span class="key-chip">fail-safe 7 days</span><span class="key-chip">support-only access</span></div>
+        <div class="teach-it">UNDROP is like Ctrl+Z for tables — instant restore. Fail-Safe is like the backup hard drive your IT department holds — you have to ask them nicely.</div>
+      </div>
+      <div class="spaced-repeat">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- CARD 21: Table Types -->
+    <article class="rcard">
+      <div class="rcard-header">
+        <div class="rcard-num">21</div>
+        <div>
+          <div class="rcard-title">Snowflake Table Types</div>
+          <div class="rcard-tag">Tables</div>
+        </div>
+      </div>
+      <div class="rcard-body">
+        <div class="hook">"Permanent = default, full TT+FS. Transient = lighter, no Fail-Safe. Temporary = session-only, vanishes."</div>
+        <div class="mental-model">
+          <div class="before"><span>Before:</span> All tables work the same way — just create and use.</div>
+          <div class="after"><span>After:</span> Permanent (full TT+FS, production), Transient (TT only, no FS, staging/intermediate), Temporary (session-scoped, no TT+FS, dev/testing).</div>
+        </div>
+        <div class="warning">⚠️ Staging tables should be Transient — no need for Fail-Safe on raw data you can reload. Saves storage cost.</div>
+        <div class="keys"><span class="key-chip">permanent</span><span class="key-chip">transient</span><span class="key-chip">temporary</span></div>
+        <div class="teach-it">Permanent is your real furniture. Transient is the rental furniture you use temporarily. Temporary is borrowing a chair — gone when you leave the session.</div>
+      </div>
+      <div class="spaced-repeat">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- CARD 22: Zero Copy Clone -->
+    <article class="rcard">
+      <div class="rcard-header">
+        <div class="rcard-num">22</div>
+        <div>
+          <div class="rcard-title">Zero Copy Cloning</div>
+          <div class="rcard-tag">Efficiency</div>
+        </div>
+      </div>
+      <div class="rcard-body">
+        <div class="hook">"CLONE creates a full copy of a database or table instantly — without duplicating any storage."</div>
+        <div class="mental-model">
+          <div class="before"><span>Before:</span> Cloning a 10TB database requires 10TB of new storage and hours of copying.</div>
+          <div class="after"><span>After:</span> Zero Copy Clone shares micro-partitions between source and clone. Only new writes to either copy create additional storage. Clone is instant and nearly free.</div>
+        </div>
+        <div class="warning">⚠️ Cloning doesn't copy privileges — you must re-grant permissions on the cloned object.</div>
+        <div class="keys"><span class="key-chip">shared micro-partitions</span><span class="key-chip">copy-on-write</span><span class="key-chip">CLONE keyword</span></div>
+        <div class="teach-it">Imagine a shortcut on your desktop — it points to the same file, takes no extra space. Only when you edit the copy does a real duplicate get made.</div>
+      </div>
+      <div class="spaced-repeat">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- CHAPTER 6: POWER FEATURES -->
+<!-- ═══════════════════════════════════════════════════ -->
+<section id="ch6">
+  <div class="chapter-header">
+    <div class="chapter-num">Chapter 06</div>
+    <h2>Power Features</h2>
+    <p>Data Sharing, Materialized Views, and Dynamic Data Masking</p>
+  </div>
+
+  <div class="card-grid">
+
+    <!-- CARD 23: Data Sharing -->
+    <article class="rcard">
+      <div class="rcard-header">
+        <div class="rcard-num">23</div>
+        <div>
+          <div class="rcard-title">Snowflake Data Sharing</div>
+          <div class="rcard-tag">Sharing</div>
+        </div>
+      </div>
+      <div class="rcard-body">
+        <div class="hook">"Share live data across accounts — no ETL, no copies, no lag. Consumers read your data directly."</div>
+        <div class="mental-model">
+          <div class="before"><span>Before:</span> Share data by exporting files and sending them to partners.</div>
+          <div class="after"><span>After:</span> CREATE SHARE → grant database objects → consumers create databases from share → they query your live data through their own virtual warehouse. Provider pays for storage, consumer for compute.</div>
+        </div>
+        <div class="warning">⚠️ Shared data is read-only to consumers. They cannot modify or load into the share objects.</div>
+        <div class="keys"><span class="key-chip">CREATE SHARE</span><span class="key-chip">provider/consumer</span><span class="key-chip">no data copy</span></div>
+        <div class="teach-it">Like giving someone a key to read your Google Doc — they see live updates instantly, no download needed. You control what they can see.</div>
+      </div>
+      <div class="spaced-repeat">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- CARD 24: Materialized Views -->
+    <article class="rcard">
+      <div class="rcard-header">
+        <div class="rcard-num">24</div>
+        <div>
+          <div class="rcard-title">Materialized Views</div>
+          <div class="rcard-tag">Performance</div>
+        </div>
+      </div>
+      <div class="rcard-body">
+        <div class="hook">"A Materialized View is a pre-computed query result stored as a table — automatically refreshed by Snowflake."</div>
+        <div class="mental-model">
+          <div class="before"><span>Before:</span> Regular views execute the query on every call — expensive for complex aggregations.</div>
+          <div class="after"><span>After:</span> Materialized views store the query result. Snowflake auto-refreshes when base table data changes (using background serverless compute). Queries hit the cache.</div>
+        </div>
+        <div class="warning">⚠️ Materialized views have restrictions: no joins on multiple tables in some editions, no non-deterministic functions, no UDFs. Check docs before using.</div>
+        <div class="keys"><span class="key-chip">pre-computed</span><span class="key-chip">auto-refresh</span><span class="key-chip">serverless maintenance</span></div>
+        <div class="teach-it">Instead of calculating the daily sales total every time someone asks, you pre-calculate and store it. When new sales come in, Snowflake quietly updates the answer.</div>
+      </div>
+      <div class="spaced-repeat">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- CARD 25: Dynamic Data Masking -->
+    <article class="rcard">
+      <div class="rcard-header">
+        <div class="rcard-num">25</div>
+        <div>
+          <div class="rcard-title">Dynamic Data Masking</div>
+          <div class="rcard-tag">Security</div>
+        </div>
+      </div>
+      <div class="rcard-body">
+        <div class="hook">"Same table, same query — an analyst sees ***-**-1234, an HR manager sees the full SSN."</div>
+        <div class="mental-model">
+          <div class="before"><span>Before:</span> Create separate masked views per role — maintain multiple objects as data changes.</div>
+          <div class="after"><span>After:</span> Create MASKING POLICY with conditional logic → apply to column → Snowflake applies at query time based on current_role(). One object, multiple visibility levels.</div>
+        </div>
+        <div class="warning">⚠️ Masking policies are applied at query time, not storage time — the underlying data is never modified. This is critical for compliance.</div>
+        <div class="keys"><span class="key-chip">MASKING POLICY</span><span class="key-chip">current_role()</span><span class="key-chip">column-level security</span></div>
+        <div class="teach-it">The same employee table exists once. When a junior analyst queries it, SSNs show as ****. When HR queries it, they see the real numbers — same data, different masks.</div>
+      </div>
+      <div class="spaced-repeat">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- CARD 26: Row Access Policies / RBAC -->
+    <article class="rcard">
+      <div class="rcard-header">
+        <div class="rcard-num">26</div>
+        <div>
+          <div class="rcard-title">RBAC &amp; Row Access Policies</div>
+          <div class="rcard-tag">Security</div>
+        </div>
+      </div>
+      <div class="rcard-body">
+        <div class="hook">"RBAC controls what objects you can touch. Row Access Policies control which rows you can see within those objects."</div>
+        <div class="mental-model">
+          <div class="before"><span>Before:</span> Use WHERE clauses in views to filter rows by user.</div>
+          <div class="after"><span>After:</span> RBAC = role hierarchy (ACCOUNTADMIN → SYSADMIN → custom roles). Row Access Policy = centralized row-level filter applied transparently at query time per role/user.</div>
+        </div>
+        <div class="warning">⚠️ Row Access Policies are transparent to users — they don't know rows are being filtered. Document this for auditors.</div>
+        <div class="keys"><span class="key-chip">role hierarchy</span><span class="key-chip">ROW ACCESS POLICY</span><span class="key-chip">SYSADMIN vs SECURITYADMIN</span></div>
+        <div class="teach-it">RBAC is the key card that gets you into a building. Row Access Policy is the office door that only shows you your department's files once you're inside.</div>
+      </div>
+      <div class="spaced-repeat">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<div class="pull-quote-section">
+  <blockquote>"Zero Copy Clone and Time Travel alone justify Snowflake for any team serious about data reliability. Everything else is a bonus."</blockquote>
+  <cite>Chapter 6 — Power Features Insight</cite>
+</div>
 
 <!-- FOOTER -->
-<footer class="page-footer">
-  <div class="container">
-    <p>Python File Handling Field Manual &nbsp;·&nbsp; Issue 2026-05-13 &nbsp;·&nbsp; Sections 0–7 of 17 &nbsp;·&nbsp; Built with Recall Magazine</p>
-  </div>
+<footer>
+  <p><strong>Snowflake &amp; Data Warehouse Recall Magazine</strong></p>
+  <p style="margin-top:0.5rem;">26 cards · 6 chapters · May 2026 Edition · Created with recall-magazine skill</p>
 </footer>
 
-
 <script>
-  // ─── LOADER ───
+  // Loader
   window.addEventListener('load', () => {
-    setTimeout(() => {
-      document.getElementById('loader').classList.add('hide');
-      setTimeout(() => document.getElementById('loader').remove(), 700);
-    }, 800);
+    setTimeout(() => document.getElementById('loader').classList.add('hidden'), 600);
   });
 
-  // ─── CHAPTER SWITCHING ───
-  function showChapter(idx) {
-    document.querySelectorAll('.chapter-page').forEach((p, i) => {
-      p.classList.toggle('active', i === idx);
+  // Intersection Observer for card reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => entry.target.classList.add('visible'), i * 80);
+        observer.unobserve(entry.target);
+      }
     });
-    document.querySelectorAll('.chap-btn').forEach((b, i) => {
-      b.classList.toggle('active', i === idx);
-    });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.rcard').forEach(card => observer.observe(card));
 
-  // ─── HISTORY SIDEBAR ───
-  const historyData = [];
-  const list = document.getElementById('history-list');
-  if (historyData.length === 0) {
-    list.innerHTML = '<p style="font-size:12px;color:#555;font-family:sans-serif">No past issues yet.<br>This is issue #1!</p>';
-  } else {
-    [...historyData].reverse().forEach(item => {
-      list.innerHTML += `<div class="history-item"><a href="previous_news/${item.filename}">${item.title}</a><span>${item.date}</span></div>`;
+  // Active nav highlighting
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('nav a.section-link');
+  const scrollObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(l => l.classList.remove('active'));
+        const active = document.querySelector(`nav a[href="#${entry.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
     });
-  }
+  }, { rootMargin: '-40% 0px -50% 0px' });
+  sections.forEach(s => scrollObserver.observe(s));
 
-  // ─── INTERSECTION OBSERVER (fade in sections) ───
-  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(e => {
-        if (e.isIntersecting) {
-          e.target.style.opacity = '1';
-          e.target.style.transform = 'none';
-        }
+  // History sidebar
+  let historyData = [];
+  try {
+    const resp = fetch('history.json').then(r => r.json()).then(data => {
+      historyData = data;
+      const list = document.getElementById('history-list');
+      if (!data.length) { list.innerHTML = '<p style="color:#aaa;font-size:12px;">No past issues yet.</p>'; return; }
+      [...data].reverse().forEach(item => {
+        list.innerHTML += `<div class="history-item"><a href="previous_news/${item.filename}">${item.title}</a><span>${item.date}</span></div>`;
       });
-    }, { threshold: 0.08 });
-
-    document.querySelectorAll('.article-section, .mode-card, .rule-card').forEach(el => {
-      el.style.opacity = '0';
-      el.style.transform = 'translateY(16px)';
-      el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-      observer.observe(el);
+    }).catch(() => {
+      document.getElementById('history-list').innerHTML = '<p style="color:#aaa;font-size:12px;">No past issues found.</p>';
     });
-  }
+  } catch(e) {}
 </script>
-
 </body>
 </html>
