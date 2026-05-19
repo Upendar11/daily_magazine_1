@@ -3,271 +3,257 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Snowflake & Data Warehouse — Recall Magazine</title>
+<title>SQL Mastery — Streaming Service Recall Magazine</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --paper: #faf7f2;
-    --ink: #1a1a18;
-    --muted: #6b6b60;
-    --rule: #ddd8cc;
-    --accent-warm: #c8602a;
-    --accent-cool: #2a5fa8;
-    --accent-energy: #1db8a0;
+    --paper: #faf8f4;
+    --ink: #181816;
+    --muted: #6a6a5e;
+    --rule: #e0dbd0;
+    --warm: #c05a28;
+    --cool: #1e5a9c;
+    --energy: #0fa890;
+    --code-bg: #1e1e2e;
+    --code-text: #cdd6f4;
+    --code-keyword: #cba6f7;
+    --code-string: #a6e3a1;
+    --code-comment: #585b70;
+    --code-fn: #89b4fa;
     --card-bg: #ffffff;
-    --sidebar-bg: #1a1a18;
   }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
-  body { background: var(--paper); color: var(--ink); font-family: 'Inter', sans-serif; }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;line-height:1.6;}
 
   /* LOADER */
-  #loader { position:fixed; inset:0; background:var(--ink); display:flex; align-items:center; justify-content:center; z-index:9999; transition: opacity 0.5s; }
-  #loader .l-text { color:#fff; font-family:'Playfair Display',serif; font-size:1.5rem; letter-spacing:0.2em; }
-  #loader.hidden { opacity:0; pointer-events:none; }
+  #loader{position:fixed;inset:0;background:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity 0.6s;}
+  #loader.hidden{opacity:0;pointer-events:none;}
+  .l-title{color:#fff;font-family:'Playfair Display',serif;font-size:1.6rem;letter-spacing:0.18em;margin-bottom:0.5rem;}
+  .l-sub{color:rgba(255,255,255,0.4);font-size:0.72rem;letter-spacing:0.2em;text-transform:uppercase;}
 
   /* HISTORY SIDEBAR */
-  #history-drawer { position:fixed; top:0; left:-300px; width:300px; height:100vh; background:#111; color:#fff; overflow-y:auto; transition:left 0.3s ease; z-index:10000; padding:24px; box-sizing:border-box; }
-  #history-drawer.open { left:0; }
-  #history-toggle { position:fixed; top:50%; left:0; transform:translateY(-50%); background:#111; color:#fff; padding:10px 6px; cursor:pointer; z-index:10001; border-radius:0 6px 6px 0; font-size:11px; writing-mode:vertical-rl; letter-spacing:2px; }
-  #history-drawer h3 { margin:0 0 18px; font-size:13px; text-transform:uppercase; letter-spacing:2px; border-bottom:1px solid #444; padding-bottom:12px; }
-  .history-item { margin-bottom:14px; }
-  .history-item a { color:#f0c040; text-decoration:none; font-size:13px; font-weight:600; display:block; }
-  .history-item a:hover { text-decoration:underline; }
-  .history-item span { font-size:11px; color:#aaa; }
-  #history-close { float:right; cursor:pointer; font-size:18px; color:#aaa; }
+  #history-drawer{position:fixed;top:0;left:-300px;width:300px;height:100vh;background:#111;color:#fff;overflow-y:auto;transition:left 0.3s ease;z-index:10000;padding:24px;box-sizing:border-box;}
+  #history-drawer.open{left:0;}
+  #history-toggle{position:fixed;top:50%;left:0;transform:translateY(-50%);background:#111;color:#fff;padding:10px 6px;cursor:pointer;z-index:10001;border-radius:0 6px 6px 0;font-size:11px;writing-mode:vertical-rl;letter-spacing:2px;}
+  #history-drawer h3{margin:0 0 18px;font-size:13px;text-transform:uppercase;letter-spacing:2px;border-bottom:1px solid #444;padding-bottom:12px;}
+  .history-item{margin-bottom:14px;}
+  .history-item a{color:#f0c040;text-decoration:none;font-size:13px;font-weight:600;display:block;}
+  .history-item a:hover{text-decoration:underline;}
+  .history-item span{font-size:11px;color:#aaa;}
+  #history-close{float:right;cursor:pointer;font-size:18px;color:#aaa;}
 
   /* NAV */
-  nav { position:sticky; top:0; background:rgba(250,247,242,0.96); backdrop-filter:blur(8px); border-bottom:1px solid var(--rule); z-index:100; padding:0 2rem; }
-  .nav-inner { max-width:1100px; margin:0 auto; display:flex; align-items:center; gap:2rem; height:52px; overflow-x:auto; }
-  .nav-logo { font-family:'Playfair Display',serif; font-weight:900; font-size:1.1rem; white-space:nowrap; color:var(--ink); text-decoration:none; margin-right:auto; }
-  nav a.section-link { font-size:0.72rem; text-transform:uppercase; letter-spacing:0.12em; color:var(--muted); text-decoration:none; white-space:nowrap; padding:4px 0; border-bottom:2px solid transparent; transition:all 0.2s; }
-  nav a.section-link:hover, nav a.section-link.active { color:var(--accent-warm); border-bottom-color:var(--accent-warm); }
+  nav{position:sticky;top:0;background:rgba(250,248,244,0.97);backdrop-filter:blur(10px);border-bottom:1px solid var(--rule);z-index:100;}
+  .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:1.5rem;height:50px;padding:0 2rem;overflow-x:auto;}
+  .nav-logo{font-family:'Playfair Display',serif;font-weight:900;font-size:1rem;color:var(--ink);text-decoration:none;white-space:nowrap;margin-right:auto;}
+  nav a.sl{font-size:0.7rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);text-decoration:none;white-space:nowrap;padding:3px 0;border-bottom:2px solid transparent;transition:all 0.2s;}
+  nav a.sl:hover,nav a.sl.active{color:var(--warm);border-bottom-color:var(--warm);}
 
   /* HERO */
-  .hero { min-height:92vh; display:grid; place-items:center; text-align:center; padding:6rem 2rem 4rem; background: linear-gradient(175deg, #1a1a18 0%, #2d2d2a 40%, #3a3530 100%); position:relative; overflow:hidden; }
-  .hero::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at 60% 40%, rgba(200,96,42,0.15) 0%, transparent 60%); }
-  .hero-kicker { font-size:0.72rem; letter-spacing:0.25em; text-transform:uppercase; color:var(--accent-energy); margin-bottom:1.5rem; }
-  .hero h1 { font-family:'Playfair Display',serif; font-size:clamp(2.8rem,7vw,5.5rem); font-weight:900; line-height:1.08; color:#fff; max-width:900px; margin-bottom:1.5rem; }
-  .hero h1 em { color:var(--accent-warm); font-style:italic; }
-  .hero .deck { font-size:1.1rem; line-height:1.7; color:rgba(255,255,255,0.65); max-width:600px; margin:0 auto 2.5rem; }
-  .hero-meta { display:flex; gap:2rem; justify-content:center; flex-wrap:wrap; }
-  .hero-meta span { font-size:0.72rem; letter-spacing:0.15em; text-transform:uppercase; color:rgba(255,255,255,0.4); }
-  .hero-meta strong { color:rgba(255,255,255,0.8); }
+  .hero{min-height:90vh;display:grid;place-items:center;text-align:center;padding:6rem 2rem 4rem;background:linear-gradient(160deg,#18181e 0%,#1e2535 50%,#1a2018 100%);position:relative;overflow:hidden;}
+  .hero::after{content:'SELECT * FROM knowledge';position:absolute;bottom:2rem;right:2rem;font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:rgba(255,255,255,0.08);letter-spacing:0.05em;}
+  .hero-kicker{font-size:0.68rem;letter-spacing:0.3em;text-transform:uppercase;color:var(--energy);margin-bottom:1.25rem;}
+  .hero h1{font-family:'Playfair Display',serif;font-size:clamp(2.6rem,7vw,5.2rem);font-weight:900;line-height:1.08;color:#fff;max-width:900px;margin-bottom:1.25rem;}
+  .hero h1 em{color:var(--warm);font-style:italic;}
+  .hero .deck{font-size:1rem;color:rgba(255,255,255,0.6);max-width:560px;margin:0 auto 2.5rem;line-height:1.75;}
+  .hero-stats{display:flex;gap:2.5rem;justify-content:center;flex-wrap:wrap;}
+  .hero-stats span{font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.35);}
+  .hero-stats strong{color:rgba(255,255,255,0.85);}
 
-  /* CHAPTER DIVIDERS */
-  .chapter-header { background:var(--ink); color:#fff; padding:4rem 2rem 3rem; text-align:center; }
-  .chapter-num { font-size:0.7rem; letter-spacing:0.3em; text-transform:uppercase; color:var(--accent-warm); margin-bottom:0.75rem; }
-  .chapter-header h2 { font-family:'Playfair Display',serif; font-size:clamp(1.8rem,4vw,3rem); font-weight:700; }
-  .chapter-header p { margin-top:0.75rem; color:rgba(255,255,255,0.5); font-size:0.9rem; max-width:600px; margin-left:auto; margin-right:auto; }
+  /* CHAPTER */
+  .ch-header{background:var(--ink);color:#fff;padding:3.5rem 2rem 2.5rem;text-align:center;}
+  .ch-num{font-size:0.68rem;letter-spacing:0.3em;text-transform:uppercase;color:var(--warm);margin-bottom:0.6rem;}
+  .ch-header h2{font-family:'Playfair Display',serif;font-size:clamp(1.7rem,4vw,2.8rem);font-weight:700;}
+  .ch-header p{margin-top:0.6rem;color:rgba(255,255,255,0.45);font-size:0.88rem;max-width:560px;margin-left:auto;margin-right:auto;}
 
   /* CARD GRID */
-  .card-grid { max-width:1100px; margin:0 auto; padding:3rem 2rem; display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:2rem; }
+  .cg{max-width:1100px;margin:0 auto;padding:2.5rem 2rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:1.75rem;}
 
   /* RECALL CARD */
-  .rcard { background:var(--card-bg); border:1px solid var(--rule); border-radius:12px; overflow:hidden; opacity:0; transform:translateY(24px); transition:opacity 0.5s, transform 0.5s; }
-  .rcard.visible { opacity:1; transform:translateY(0); }
-  .rcard:hover { box-shadow:0 8px 32px rgba(0,0,0,0.1); transform:translateY(-2px); }
-  .rcard-header { padding:1.25rem 1.5rem 1rem; border-bottom:1px solid var(--rule); display:flex; align-items:flex-start; gap:1rem; }
-  .rcard-num { font-family:'JetBrains Mono',monospace; font-size:0.68rem; color:var(--muted); min-width:32px; padding-top:4px; }
-  .rcard-title { font-family:'Playfair Display',serif; font-size:1.15rem; font-weight:700; line-height:1.3; }
-  .rcard-tag { font-size:0.65rem; letter-spacing:0.12em; text-transform:uppercase; color:#fff; background:var(--accent-cool); border-radius:4px; padding:2px 8px; margin-top:4px; display:inline-block; }
-  .rcard-body { padding:1.25rem 1.5rem; }
-  .hook { font-style:italic; font-size:0.9rem; color:var(--muted); border-left:3px solid var(--accent-warm); padding-left:0.75rem; margin-bottom:1.25rem; line-height:1.6; }
-  .mental-model { background:#f5f3ee; border-radius:8px; padding:0.9rem 1rem; margin-bottom:1.25rem; font-size:0.84rem; }
-  .mental-model .before { color:#a0430a; margin-bottom:4px; }
-  .mental-model .after { color:#1a6640; }
-  .mental-model span { font-weight:600; }
-  .warning { font-size:0.8rem; color:#b03030; background:#fff5f5; border-radius:6px; padding:0.6rem 0.9rem; margin-bottom:1.1rem; }
-  .keys { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:1.1rem; }
-  .key-chip { font-size:0.7rem; background:#f0ede6; border-radius:20px; padding:3px 10px; color:var(--ink); font-family:'JetBrains Mono',monospace; cursor:default; }
-  .teach-it { font-size:0.82rem; color:var(--muted); font-style:italic; line-height:1.6; border-top:1px solid var(--rule); padding-top:1rem; }
-  .spaced-repeat { padding:0 1.5rem 1.25rem; }
-  .sr-label { font-size:0.65rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:0.5rem; }
-  .sr-chips { display:flex; gap:6px; flex-wrap:wrap; }
-  .sr-chip { font-size:0.68rem; border:1px solid var(--rule); border-radius:20px; padding:3px 10px; cursor:pointer; transition:all 0.2s; }
-  .sr-chip.done { background:var(--accent-energy); border-color:var(--accent-energy); color:#fff; text-decoration:line-through; }
+  .rc{background:var(--card-bg);border:1px solid var(--rule);border-radius:12px;overflow:hidden;opacity:0;transform:translateY(20px);transition:opacity 0.45s,transform 0.45s;}
+  .rc.vis{opacity:1;transform:none;}
+  .rc:hover{box-shadow:0 6px 28px rgba(0,0,0,0.09);transform:translateY(-2px);}
+  .rc-head{padding:1.1rem 1.4rem 0.9rem;border-bottom:1px solid var(--rule);display:flex;gap:0.9rem;align-items:flex-start;}
+  .rc-n{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--muted);min-width:28px;padding-top:3px;}
+  .rc-title{font-family:'Playfair Display',serif;font-size:1.08rem;font-weight:700;line-height:1.3;}
+  .rc-tag{font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:#fff;border-radius:4px;padding:2px 7px;margin-top:3px;display:inline-block;}
+  .tag-sel{background:#c05a28;}
+  .tag-null{background:#7c3aed;}
+  .tag-grp{background:#0f766e;}
+  .tag-hav{background:#1d4ed8;}
+  .tag-join{background:#b45309;}
+  .tag-sub{background:#1e5a9c;}
+  .tag-win{background:#7f1d1d;}
+  .tag-pat{background:#374151;}
+  .rc-body{padding:1.1rem 1.4rem;}
+
+  /* CARD SECTIONS */
+  .hook{font-style:italic;font-size:0.88rem;color:var(--muted);border-left:3px solid var(--warm);padding-left:0.7rem;margin-bottom:1.1rem;line-height:1.65;}
+  .mm{background:#f5f3ee;border-radius:8px;padding:0.85rem;margin-bottom:1.1rem;font-size:0.82rem;line-height:1.6;}
+  .mm .bef{color:#a0400a;margin-bottom:3px;} .mm .aft{color:#1a5c38;}
+  .mm span{font-weight:600;}
+  .warn{font-size:0.78rem;color:#b02020;background:#fff5f5;border-radius:6px;padding:0.55rem 0.8rem;margin-bottom:1rem;}
+
+  /* CODE BLOCK */
+  .code-block{background:var(--code-bg);border-radius:8px;padding:0.9rem 1rem;margin-bottom:1.1rem;overflow-x:auto;}
+  .code-block pre{font-family:'JetBrains Mono',monospace;font-size:0.74rem;line-height:1.7;color:var(--code-text);}
+  .kw{color:var(--code-keyword);}
+  .fn{color:var(--code-fn);}
+  .str{color:var(--code-string);}
+  .cm{color:var(--code-comment);}
+  .num{color:#fab387;}
+
+  .keys{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:1rem;}
+  .kc{font-size:0.68rem;background:#f0ede6;border-radius:20px;padding:2px 9px;color:var(--ink);font-family:'JetBrains Mono',monospace;}
+  .teach{font-size:0.8rem;color:var(--muted);font-style:italic;line-height:1.65;border-top:1px solid var(--rule);padding-top:0.9rem;}
+  .sr-wrap{padding:0 1.4rem 1.2rem;}
+  .sr-label{font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:0.45rem;}
+  .sr-chips{display:flex;gap:5px;flex-wrap:wrap;}
+  .src{font-size:0.66rem;border:1px solid var(--rule);border-radius:20px;padding:2px 9px;cursor:pointer;transition:all 0.2s;user-select:none;}
+  .src.done{background:var(--energy);border-color:var(--energy);color:#fff;text-decoration:line-through;}
+
+  /* WIDE CARD for patterns */
+  .wide{grid-column:1 / -1;}
+  .pattern-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:1rem;margin-top:1rem;}
+  .pg-item{background:#f7f5f0;border-radius:8px;padding:0.85rem;}
+  .pg-item h4{font-size:0.78rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:0.6rem;}
+
+  /* COMPARISON TABLE */
+  .cmp-table{width:100%;border-collapse:collapse;font-size:0.78rem;margin-bottom:1.1rem;}
+  .cmp-table th{background:var(--ink);color:#fff;padding:6px 10px;text-align:left;font-weight:500;}
+  .cmp-table td{padding:6px 10px;border-bottom:1px solid var(--rule);}
+  .cmp-table tr:nth-child(even) td{background:#f5f3ee;}
 
   /* PULL QUOTE */
-  .pull-quote-section { background:var(--ink); padding:4rem 2rem; text-align:center; }
-  .pull-quote-section blockquote { font-family:'Playfair Display',serif; font-size:clamp(1.4rem,3vw,2.2rem); font-style:italic; color:#fff; max-width:800px; margin:0 auto; line-height:1.5; }
-  .pull-quote-section cite { display:block; margin-top:1.25rem; font-size:0.75rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--accent-energy); font-style:normal; }
+  .pq{background:var(--ink);padding:3.5rem 2rem;text-align:center;}
+  .pq blockquote{font-family:'Playfair Display',serif;font-size:clamp(1.25rem,2.5vw,1.9rem);font-style:italic;color:#fff;max-width:760px;margin:0 auto;line-height:1.55;}
+  .pq cite{display:block;margin-top:1rem;font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--energy);font-style:normal;}
 
   /* FOOTER */
-  footer { background:var(--ink); color:rgba(255,255,255,0.4); text-align:center; padding:3rem 2rem; font-size:0.8rem; }
-  footer strong { color:rgba(255,255,255,0.7); }
+  footer{background:var(--ink);color:rgba(255,255,255,0.35);text-align:center;padding:2.5rem 2rem;font-size:0.78rem;}
+  footer strong{color:rgba(255,255,255,0.65);}
 
-  @media(max-width:600px) { .card-grid { padding:2rem 1rem; } }
-  @media(prefers-reduced-motion:reduce) { .rcard { transition:none; opacity:1; transform:none; } }
+  @media(max-width:640px){.cg{padding:1.5rem 1rem;}.wide{grid-column:auto;}}
+  @media(prefers-reduced-motion:reduce){.rc{transition:none;opacity:1;transform:none;}}
 </style>
 </head>
 <body>
 
-<div id="loader"><span class="l-text">LOADING RECALL EDITION</span></div>
+<div id="loader">
+  <div class="l-title">SQL RECALL MAGAZINE</div>
+  <div class="l-sub">Streaming Service Edition</div>
+</div>
 
-<!-- HISTORY SIDEBAR -->
 <div id="history-toggle" onclick="document.getElementById('history-drawer').classList.toggle('open')">📰 History</div>
 <div id="history-drawer">
   <h3>Past Issues <span id="history-close" onclick="document.getElementById('history-drawer').classList.remove('open')">✕</span></h3>
   <div id="history-list"></div>
 </div>
 
-<!-- NAV -->
 <nav>
   <div class="nav-inner">
-    <a class="nav-logo" href="#">❄️ Snowflake Recall</a>
-    <a class="section-link" href="#ch1">Foundations</a>
-    <a class="section-link" href="#ch2">Architecture</a>
-    <a class="section-link" href="#ch3">Modeling</a>
-    <a class="section-link" href="#ch4">ETL & SCDs</a>
-    <a class="section-link" href="#ch5">Advanced</a>
-    <a class="section-link" href="#ch6">Power Features</a>
+    <a class="nav-logo" href="#">🎬 SQL Recall</a>
+    <a class="sl" href="#ch1">SELECT & WHERE</a>
+    <a class="sl" href="#ch2">NULL & IN</a>
+    <a class="sl" href="#ch3">GROUP BY</a>
+    <a class="sl" href="#ch4">HAVING</a>
+    <a class="sl" href="#ch5">JOINs</a>
+    <a class="sl" href="#ch6">CTEs & Subqueries</a>
+    <a class="sl" href="#ch7">Window Functions</a>
+    <a class="sl" href="#ch8">Pattern Library</a>
   </div>
 </nav>
 
 <!-- HERO -->
 <section class="hero">
   <div>
-    <div class="hero-kicker">Recall Trigger Magazine · Data Engineering Edition</div>
-    <h1>Master <em>Snowflake</em> &amp;<br>Data Warehousing</h1>
-    <p class="deck">26 recall trigger cards. 6 chapters. Everything from DW Basics to Dynamic Data Masking — structured for retention, not passive reading.</p>
-    <div class="hero-meta">
-      <span><strong>26</strong> Recall Cards</span>
-      <span><strong>6</strong> Chapters</span>
+    <div class="hero-kicker">Recall Trigger Magazine · SQL Edition</div>
+    <h1>SQL from <em>Zero</em><br>to Query Hero</h1>
+    <p class="deck">7 challenges. 25 query patterns. One streaming service dataset. Your complete SQL interview toolkit — built for retrieval, not passive reading.</p>
+    <div class="hero-stats">
+      <span><strong>20</strong> Recall Cards</span>
+      <span><strong>8</strong> Chapters</span>
+      <span><strong>25</strong> Pattern Styles</span>
       <span><strong>May 2026</strong> Edition</span>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════════ -->
-<!-- CHAPTER 1: DATA WAREHOUSE FOUNDATIONS -->
-<!-- ═══════════════════════════════════════════════════ -->
+<!-- ═══ CHAPTER 1: SELECT + WHERE + ORDER BY ═══ -->
 <section id="ch1">
-  <div class="chapter-header">
-    <div class="chapter-num">Chapter 01</div>
-    <h2>Data Warehouse Foundations</h2>
-    <p>DW basics, OLTP vs OLAP, warehouse layers, and Data Lake distinctions</p>
+  <div class="ch-header">
+    <div class="ch-num">Chapter 01</div>
+    <h2>SELECT · WHERE · ORDER BY</h2>
+    <p>Filtering rows, combining conditions, and sorting results</p>
   </div>
+  <div class="cg">
 
-  <div class="card-grid">
-
-    <!-- CARD 1: DW Basics -->
-    <article class="rcard">
-      <div class="rcard-header">
-        <div class="rcard-num">01</div>
+    <article class="rc">
+      <div class="rc-head">
+        <div class="rc-n">01</div>
         <div>
-          <div class="rcard-title">What is a Data Warehouse?</div>
-          <div class="rcard-tag">DW Basics</div>
+          <div class="rc-title">SELECT + WHERE + ORDER BY</div>
+          <div class="rc-tag tag-sel">Filtering</div>
         </div>
       </div>
-      <div class="rcard-body">
-        <div class="hook">"A DW is a library — everything curated, indexed, and optimized for reading, not for updating."</div>
-        <div class="mental-model">
-          <div class="before"><span>Before:</span> A database and a data warehouse are basically the same thing.</div>
-          <div class="after"><span>After:</span> A DW is purpose-built for analytical queries — historical, integrated, subject-oriented, non-volatile.</div>
+      <div class="rc-body">
+        <div class="hook">"WHERE narrows the rows. ORDER BY arranges them. Forget ORDER BY and you answer the question wrong."</div>
+        <div class="mm">
+          <div class="bef"><span>Before:</span> Write WHERE conditions and assume the result is sorted.</div>
+          <div class="aft"><span>After:</span> Results from WHERE have no guaranteed order. ORDER BY is always explicit — if the question says "sorted," it must be in the query.</div>
         </div>
-        <div class="warning">⚠️ Don't say "we store data" — say "we integrate, transform, and serve historical data for analysis."</div>
-        <div class="keys"><span class="key-chip">subject-oriented</span><span class="key-chip">integrated</span><span class="key-chip">non-volatile</span></div>
-        <div class="teach-it">Imagine a giant filing cabinet where every department's data is cleaned, organized, and stored forever — just for reports, never for daily operations.</div>
+        <div class="code-block"><pre><span class="kw">SELECT</span> title, rating
+<span class="kw">FROM</span> shows
+<span class="kw">WHERE</span> genre = <span class="str">'Sci-Fi'</span>
+  <span class="kw">AND</span> rating &gt; <span class="num">8.0</span>
+<span class="kw">ORDER BY</span> rating <span class="kw">DESC</span>;</pre></div>
+        <div class="warn">⚠️ Compare numbers without quotes: <code>rating &gt; 8.0</code> not <code>rating &gt; '8.0'</code>. Quoted numbers trigger string comparison, not numeric.</div>
+        <div class="keys"><span class="kc">WHERE = filter</span><span class="kc">AND = both must match</span><span class="kc">ORDER BY DESC</span></div>
+        <div class="teach">The content team wants Sci-Fi shows rated above 8.0, best first. WHERE picks the rows, ORDER BY sorts them — both are required to fully answer the question.</div>
       </div>
-      <div class="spaced-repeat">
+      <div class="sr-wrap">
         <div class="sr-label">Spaced Repeat</div>
         <div class="sr-chips">
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="src" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 month</span>
         </div>
       </div>
     </article>
 
-    <!-- CARD 2: OLTP vs OLAP -->
-    <article class="rcard">
-      <div class="rcard-header">
-        <div class="rcard-num">02</div>
+    <article class="rc">
+      <div class="rc-head">
+        <div class="rc-n">02</div>
         <div>
-          <div class="rcard-title">OLTP vs OLAP</div>
-          <div class="rcard-tag">DW Basics</div>
+          <div class="rc-title">AND vs OR — When Both Conditions Must Hold</div>
+          <div class="rc-tag tag-sel">Logic</div>
         </div>
       </div>
-      <div class="rcard-body">
-        <div class="hook">"OLTP is a cashier ringing up orders. OLAP is the CFO reviewing quarterly trends."</div>
-        <div class="mental-model">
-          <div class="before"><span>Before:</span> Both handle SQL queries, so they're interchangeable.</div>
-          <div class="after"><span>After:</span> OLTP = small, fast, transactional writes. OLAP = large, complex, analytical reads across millions of rows.</div>
+      <div class="rc-body">
+        <div class="hook">"AND = both gates must open. OR = either gate is enough."</div>
+        <div class="mm">
+          <div class="bef"><span>Before:</span> AND and OR are interchangeable — just pick one.</div>
+          <div class="aft"><span>After:</span> AND makes the result set smaller (both conditions required). OR makes it larger (either condition qualifies). Mixing them wrong produces silent wrong answers.</div>
         </div>
-        <div class="warning">⚠️ OLTP is normalized (3NF) to avoid redundancy. OLAP is denormalized for fast reads — the opposite goal.</div>
-        <div class="keys"><span class="key-chip">OLTP = writes</span><span class="key-chip">OLAP = reads</span><span class="key-chip">3NF vs star</span></div>
-        <div class="teach-it">OLTP handles your bank recording a transaction right now. OLAP helps the bank understand all your transactions over 5 years.</div>
-      </div>
-      <div class="spaced-repeat">
-        <div class="sr-label">Spaced Repeat</div>
-        <div class="sr-chips">
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
-        </div>
-      </div>
-    </article>
+        <div class="code-block"><pre><span class="cm">-- AND: must be Sci-Fi AND rated above 8.0</span>
+<span class="kw">WHERE</span> genre = <span class="str">'Sci-Fi'</span> <span class="kw">AND</span> rating &gt; <span class="num">8.0</span>
 
-    <!-- CARD 3: DW Layers -->
-    <article class="rcard">
-      <div class="rcard-header">
-        <div class="rcard-num">03</div>
-        <div>
-          <div class="rcard-title">Data Warehouse Layers</div>
-          <div class="rcard-tag">DW Architecture</div>
-        </div>
+<span class="cm">-- OR: either Sci-Fi OR rated above 8.0</span>
+<span class="kw">WHERE</span> genre = <span class="str">'Sci-Fi'</span> <span class="kw">OR</span> rating &gt; <span class="num">8.0</span></pre></div>
+        <div class="warn">⚠️ Boundary values matter: <code>rating &gt; 8.0</code> excludes exactly 8.0. Use <code>&gt;=</code> if 8.0 should be included.</div>
+        <div class="keys"><span class="kc">AND = intersect</span><span class="kc">OR = union</span><span class="kc">boundary: &gt; vs &gt;=</span></div>
+        <div class="teach">If the challenge says "Sci-Fi AND rated above 8.0" — Midnight Frequencies (8.0) is excluded because 8.0 is not strictly greater than 8.0.</div>
       </div>
-      <div class="rcard-body">
-        <div class="hook">"Raw → Cleaned → Served. Each layer adds a layer of trust."</div>
-        <div class="mental-model">
-          <div class="before"><span>Before:</span> Just load data into one big table and query it.</div>
-          <div class="after"><span>After:</span> Staging (raw) → ODS (operational) → Core/DW (transformed) → Data Mart (subject-specific). Each step adds governance.</div>
-        </div>
-        <div class="warning">⚠️ Never query from staging in production dashboards — it's untransformed, potentially duplicated data.</div>
-        <div class="keys"><span class="key-chip">staging</span><span class="key-chip">ODS</span><span class="key-chip">data mart</span></div>
-        <div class="teach-it">Think of it like cooking: first you buy raw groceries (staging), then you prep them (ODS), then you cook the dish (DW), then you plate it (data mart).</div>
-      </div>
-      <div class="spaced-repeat">
+      <div class="sr-wrap">
         <div class="sr-label">Spaced Repeat</div>
         <div class="sr-chips">
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
-        </div>
-      </div>
-    </article>
-
-    <!-- CARD 4: Data Lake vs DW -->
-    <article class="rcard">
-      <div class="rcard-header">
-        <div class="rcard-num">04</div>
-        <div>
-          <div class="rcard-title">Data Lake vs Data Warehouse</div>
-          <div class="rcard-tag">DW Basics</div>
-        </div>
-      </div>
-      <div class="rcard-body">
-        <div class="hook">"Data Lake = dump it all in a pond. Data Warehouse = fill a curated swimming pool."</div>
-        <div class="mental-model">
-          <div class="before"><span>Before:</span> Data Lake is just a cheaper Data Warehouse.</div>
-          <div class="after"><span>After:</span> Lake = schema-on-read, raw, unstructured/semi-structured. DW = schema-on-write, structured, governed, query-optimized.</div>
-        </div>
-        <div class="warning">⚠️ "Data Swamp" happens when a Data Lake has no governance — metadata, cataloging, and access controls are mandatory.</div>
-        <div class="keys"><span class="key-chip">schema-on-read</span><span class="key-chip">schema-on-write</span><span class="key-chip">data swamp</span></div>
-        <div class="teach-it">A Data Lake stores everything as-is — photos, files, JSON, CSV. A Data Warehouse only stores clean, organized, structured data ready for questions.</div>
-      </div>
-      <div class="spaced-repeat">
-        <div class="sr-label">Spaced Repeat</div>
-        <div class="sr-chips">
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="src" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 month</span>
         </div>
       </div>
     </article>
@@ -275,139 +261,83 @@
   </div>
 </section>
 
-<div class="pull-quote-section">
-  <blockquote>"In data warehousing, the architecture you choose determines the questions you can answer — and how fast you can answer them."</blockquote>
-  <cite>Chapter 1 — Foundations Insight</cite>
-</div>
-
-<!-- ═══════════════════════════════════════════════════ -->
-<!-- CHAPTER 2: SNOWFLAKE ARCHITECTURE -->
-<!-- ═══════════════════════════════════════════════════ -->
+<!-- ═══ CHAPTER 2: NULL HANDLING ═══ -->
 <section id="ch2">
-  <div class="chapter-header">
-    <div class="chapter-num">Chapter 02</div>
-    <h2>Snowflake Architecture</h2>
-    <p>How Snowflake separates storage from compute and scales independently</p>
+  <div class="ch-header">
+    <div class="ch-num">Chapter 02</div>
+    <h2>NULL Handling &amp; IN</h2>
+    <p>Why = NULL never works, and how IN replaces multiple OR conditions</p>
   </div>
+  <div class="cg">
 
-  <div class="card-grid">
-
-    <!-- CARD 5: Snowflake Basics -->
-    <article class="rcard">
-      <div class="rcard-header">
-        <div class="rcard-num">05</div>
+    <article class="rc">
+      <div class="rc-head">
+        <div class="rc-n">03</div>
         <div>
-          <div class="rcard-title">Snowflake Overview</div>
-          <div class="rcard-tag">Snowflake</div>
+          <div class="rc-title">IS NULL — The Only Way to Check Missing Values</div>
+          <div class="rc-tag tag-null">NULL</div>
         </div>
       </div>
-      <div class="rcard-body">
-        <div class="hook">"Snowflake is not a database. It's a cloud-native data platform that separates what you store from how you compute."</div>
-        <div class="mental-model">
-          <div class="before"><span>Before:</span> Snowflake is just another cloud SQL database.</div>
-          <div class="after"><span>After:</span> Snowflake has 3 layers: Cloud Services (brain), Query Processing (virtual warehouses), and Storage (columnar, S3/Azure/GCS) — all independent.</div>
+      <div class="rc-body">
+        <div class="hook">"NULL means unknown. You can't ask 'is unknown equal to unknown?' — you need IS NULL."</div>
+        <div class="mm">
+          <div class="bef"><span>Before:</span> <code>WHERE email = NULL</code> finds rows with missing emails.</div>
+          <div class="aft"><span>After:</span> SQL evaluates <code>= NULL</code> as UNKNOWN (not TRUE), so zero rows ever match. Always use <code>IS NULL</code> or <code>IS NOT NULL</code>.</div>
         </div>
-        <div class="warning">⚠️ You pay for storage and compute separately — a warehouse sitting idle still costs nothing, unlike traditional databases.</div>
-        <div class="keys"><span class="key-chip">3-layer architecture</span><span class="key-chip">columnar storage</span><span class="key-chip">multi-cluster</span></div>
-        <div class="teach-it">Snowflake is like renting a kitchen (compute) separately from the pantry (storage) — you only pay for the kitchen when you're actually cooking.</div>
+        <div class="code-block"><pre><span class="cm">-- ❌ This always returns 0 rows</span>
+<span class="kw">WHERE</span> email = <span class="kw">NULL</span>
+
+<span class="cm">-- ✅ Correct</span>
+<span class="kw">WHERE</span> email <span class="kw">IS NULL</span>
+<span class="kw">WHERE</span> email <span class="kw">IS NOT NULL</span></pre></div>
+        <div class="warn">⚠️ NULLs are also invisible to COUNT(*) vs COUNT(column). COUNT(*) counts all rows; COUNT(email) skips NULLs.</div>
+        <div class="keys"><span class="kc">IS NULL</span><span class="kc">IS NOT NULL</span><span class="kc">= NULL → always false</span></div>
+        <div class="teach">Aisha has no email — it's NULL. <code>email = NULL</code> returns nothing. <code>email IS NULL</code> finds Aisha correctly.</div>
       </div>
-      <div class="spaced-repeat">
+      <div class="sr-wrap">
         <div class="sr-label">Spaced Repeat</div>
         <div class="sr-chips">
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="src" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 month</span>
         </div>
       </div>
     </article>
 
-    <!-- CARD 6: Snowflake Architecture Layers -->
-    <article class="rcard">
-      <div class="rcard-header">
-        <div class="rcard-num">06</div>
+    <article class="rc">
+      <div class="rc-head">
+        <div class="rc-n">04</div>
         <div>
-          <div class="rcard-title">Snowflake's 3-Layer Architecture</div>
-          <div class="rcard-tag">Snowflake</div>
+          <div class="rc-title">IN — Cleaner Multiple-Value Matching</div>
+          <div class="rc-tag tag-null">Filtering</div>
         </div>
       </div>
-      <div class="rcard-body">
-        <div class="hook">"Storage is forever. Compute is on-demand. Cloud Services is always-on intelligence."</div>
-        <div class="mental-model">
-          <div class="before"><span>Before:</span> All three layers must be scaled together like traditional DBs.</div>
-          <div class="after"><span>After:</span> Cloud Services (metadata, auth, optimizer) runs always. Virtual Warehouses spin up/down. Storage persists independently in cloud object stores.</div>
+      <div class="rc-body">
+        <div class="hook">"IN replaces a chain of ORs — cleaner, faster to read, and easier to extend."</div>
+        <div class="mm">
+          <div class="bef"><span>Before:</span> Write <code>country = 'USA' OR country = 'Japan'</code> for multiple values.</div>
+          <div class="aft"><span>After:</span> <code>country IN ('USA', 'Japan')</code> does the same thing with less noise. Works for any number of values.</div>
         </div>
-        <div class="warning">⚠️ Cloud Services layer queries (metadata-only, < 10% of credits) don't consume warehouse credits — but heavy queries to it can still be charged.</div>
-        <div class="keys"><span class="key-chip">cloud services</span><span class="key-chip">virtual warehouse</span><span class="key-chip">centralized storage</span></div>
-        <div class="teach-it">Imagine: a permanent warehouse (storage), a team of workers you hire only when needed (virtual warehouse), and a manager who's always in the office for free (cloud services).</div>
-      </div>
-      <div class="spaced-repeat">
-        <div class="sr-label">Spaced Repeat</div>
-        <div class="sr-chips">
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
-        </div>
-      </div>
-    </article>
+        <div class="code-block"><pre><span class="cm">-- OR approach (verbose)</span>
+<span class="kw">WHERE</span> country = <span class="str">'USA'</span> <span class="kw">OR</span> country = <span class="str">'Japan'</span>
 
-    <!-- CARD 7: Virtual Warehouses -->
-    <article class="rcard">
-      <div class="rcard-header">
-        <div class="rcard-num">07</div>
-        <div>
-          <div class="rcard-title">Virtual Warehouses &amp; Sizing</div>
-          <div class="rcard-tag">Compute</div>
-        </div>
-      </div>
-      <div class="rcard-body">
-        <div class="hook">"A Virtual Warehouse is your compute cluster — sizes go XS to 6XL, each doubling in power and cost."</div>
-        <div class="mental-model">
-          <div class="before"><span>Before:</span> Bigger warehouse = always faster queries.</div>
-          <div class="after"><span>After:</span> Bigger warehouse speeds up single query execution (scale up). Multi-cluster handles concurrency (scale out). Wrong choice wastes credits.</div>
-        </div>
-        <div class="warning">⚠️ Auto-suspend is your best friend — set it to 60–300 seconds or you'll burn credits on idle compute all day.</div>
-        <div class="keys"><span class="key-chip">scale up vs out</span><span class="key-chip">auto-suspend</span><span class="key-chip">credits/hour</span></div>
-        <div class="teach-it">Size is like hiring more workers for one big job. Multi-cluster is like opening more checkout lanes when the store gets busy.</div>
-      </div>
-      <div class="spaced-repeat">
-        <div class="sr-label">Spaced Repeat</div>
-        <div class="sr-chips">
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
-        </div>
-      </div>
-    </article>
+<span class="cm">-- IN approach (clean)</span>
+<span class="kw">WHERE</span> country <span class="kw">IN</span> (<span class="str">'USA'</span>, <span class="str">'Japan'</span>)
 
-    <!-- CARD 8: Cache & Clustering -->
-    <article class="rcard">
-      <div class="rcard-header">
-        <div class="rcard-num">08</div>
-        <div>
-          <div class="rcard-title">Caching &amp; Micro-Partitions</div>
-          <div class="rcard-tag">Performance</div>
-        </div>
+<span class="cm">-- NOT IN: exclude a set</span>
+<span class="kw">WHERE</span> country <span class="kw">NOT IN</span> (<span class="str">'USA'</span>, <span class="str">'Japan'</span>)</pre></div>
+        <div class="warn">⚠️ NOT IN breaks silently if the list contains a NULL — use NOT EXISTS or IS NOT NULL guard instead.</div>
+        <div class="keys"><span class="kc">IN = OR shorthand</span><span class="kc">NOT IN = exclude set</span><span class="kc">NULL in NOT IN = danger</span></div>
+        <div class="teach">Finding users from USA, Japan, or Ghana? <code>country IN ('USA','Japan','Ghana')</code> — one clean condition instead of three ORs chained together.</div>
       </div>
-      <div class="rcard-body">
-        <div class="hook">"Snowflake has 3 caches — each one faster and cheaper than hitting storage."</div>
-        <div class="mental-model">
-          <div class="before"><span>Before:</span> Every query goes to disk — performance depends only on warehouse size.</div>
-          <div class="after"><span>After:</span> Result Cache (24h, free) → Local Disk Cache (warehouse SSD) → Remote Storage. Micro-partitions + clustering keys prune irrelevant data automatically.</div>
-        </div>
-        <div class="warning">⚠️ Result cache is invalidated if the underlying data changes — repeated identical queries on changing tables won't cache.</div>
-        <div class="keys"><span class="key-chip">result cache</span><span class="key-chip">micro-partitions</span><span class="key-chip">partition pruning</span></div>
-        <div class="teach-it">If you asked Snowflake the same question yesterday and nothing changed, it hands you the same answer instantly — no work needed.</div>
-      </div>
-      <div class="spaced-repeat">
+      <div class="sr-wrap">
         <div class="sr-label">Spaced Repeat</div>
         <div class="sr-chips">
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="src" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 month</span>
         </div>
       </div>
     </article>
@@ -415,164 +345,87 @@
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════════ -->
-<!-- CHAPTER 3: DIMENSIONAL MODELING -->
-<!-- ═══════════════════════════════════════════════════ -->
+<div class="pq">
+  <blockquote>"NULL is not zero. NULL is not empty string. NULL is the absence of a value — and SQL treats it with special rules that trip up even senior engineers."</blockquote>
+  <cite>Chapter 2 — NULL Insight</cite>
+</div>
+
+<!-- ═══ CHAPTER 3: GROUP BY ═══ -->
 <section id="ch3">
-  <div class="chapter-header">
-    <div class="chapter-num">Chapter 03</div>
-    <h2>Dimensional Modeling</h2>
-    <p>Star schema, fact &amp; dimension tables, surrogate keys, and schema types</p>
+  <div class="ch-header">
+    <div class="ch-num">Chapter 03</div>
+    <h2>GROUP BY + Aggregates</h2>
+    <p>Collapsing rows into groups and computing summary statistics</p>
   </div>
+  <div class="cg">
 
-  <div class="card-grid">
-
-    <!-- CARD 9: Dimensional Modeling -->
-    <article class="rcard">
-      <div class="rcard-header">
-        <div class="rcard-num">09</div>
+    <article class="rc">
+      <div class="rc-head">
+        <div class="rc-n">05</div>
         <div>
-          <div class="rcard-title">Dimensional Modeling Basics</div>
-          <div class="rcard-tag">Modeling</div>
+          <div class="rc-title">GROUP BY — Bundling Rows Together</div>
+          <div class="rc-tag tag-grp">Aggregation</div>
         </div>
       </div>
-      <div class="rcard-body">
-        <div class="hook">"Facts measure what happened. Dimensions describe who, what, when, where."</div>
-        <div class="mental-model">
-          <div class="before"><span>Before:</span> Just normalize everything into 3NF like in OLTP.</div>
-          <div class="after"><span>After:</span> Dimensional modeling uses Fact tables (metrics, FK references) + Dimension tables (descriptive attributes) for fast, intuitive analytics.</div>
+      <div class="rc-body">
+        <div class="hook">"GROUP BY folds many rows into one per group. After that, only aggregates can summarize within each group."</div>
+        <div class="mm">
+          <div class="bef"><span>Before:</span> SELECT all columns and COUNT() in the same query freely.</div>
+          <div class="aft"><span>After:</span> Once you GROUP BY, every column in SELECT must either be in GROUP BY or wrapped in an aggregate (COUNT, SUM, AVG, MIN, MAX).</div>
         </div>
-        <div class="warning">⚠️ Don't put measures in dimension tables or descriptive attributes in fact tables — keep the roles clean.</div>
-        <div class="keys"><span class="key-chip">fact table</span><span class="key-chip">dimension table</span><span class="key-chip">grain</span></div>
-        <div class="teach-it">A sale happened (fact): $50, 2 items. WHO bought it (customer dimension), WHAT was sold (product dimension), WHEN (date dimension).</div>
+        <div class="code-block"><pre><span class="kw">SELECT</span> user_id,
+       <span class="fn">COUNT</span>(completed) <span class="kw">AS</span> completed_watches
+<span class="kw">FROM</span> watch_history
+<span class="kw">WHERE</span> completed = <span class="kw">TRUE</span>
+<span class="kw">GROUP BY</span> user_id
+<span class="kw">ORDER BY</span> completed_watches <span class="kw">DESC</span>;</pre></div>
+        <div class="warn">⚠️ SQL clause order is strict: SELECT → FROM → WHERE → GROUP BY → HAVING → ORDER BY. WHERE before GROUP BY — always.</div>
+        <div class="keys"><span class="kc">GROUP BY = bundle</span><span class="kc">aggregate: COUNT SUM AVG</span><span class="kc">WHERE before GROUP BY</span></div>
+        <div class="teach">All of Marcus's completed watches get bundled into one row. COUNT() then counts how many rows were in his bundle — that's his total.</div>
       </div>
-      <div class="spaced-repeat">
+      <div class="sr-wrap">
         <div class="sr-label">Spaced Repeat</div>
         <div class="sr-chips">
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="src" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 month</span>
         </div>
       </div>
     </article>
 
-    <!-- CARD 10: Star vs Snowflake Schema -->
-    <article class="rcard">
-      <div class="rcard-header">
-        <div class="rcard-num">10</div>
+    <article class="rc">
+      <div class="rc-head">
+        <div class="rc-n">06</div>
         <div>
-          <div class="rcard-title">Star vs Snowflake Schema</div>
-          <div class="rcard-tag">Modeling</div>
+          <div class="rc-title">SQL Clause Execution Order</div>
+          <div class="rc-tag tag-grp">Fundamentals</div>
         </div>
       </div>
-      <div class="rcard-body">
-        <div class="hook">"Star = simple, fast, some redundancy. Snowflake schema = normalized dimensions, more joins."</div>
-        <div class="mental-model">
-          <div class="before"><span>Before:</span> Snowflake schema is always better because it's more normalized.</div>
-          <div class="after"><span>After:</span> Star schema wins for query performance (fewer joins). Snowflake schema reduces redundancy but adds query complexity. Most DWs prefer Star.</div>
+      <div class="rc-body">
+        <div class="hook">"SQL writes left-to-right but executes inside-out. The order of clauses is fixed by the engine, not you."</div>
+        <div class="mm">
+          <div class="bef"><span>Before:</span> Write clauses in whatever order feels natural.</div>
+          <div class="aft"><span>After:</span> Logical execution order: FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY. Writing them wrong causes syntax errors or silent logic bugs.</div>
         </div>
-        <div class="warning">⚠️ Don't confuse Snowflake schema (data model) with Snowflake (the cloud platform) — completely different things.</div>
-        <div class="keys"><span class="key-chip">star = denormalized</span><span class="key-chip">snowflake = normalized</span><span class="key-chip">join depth</span></div>
-        <div class="teach-it">Star schema: fact table in the middle, dimension tables around it like a star. Snowflake schema: dimensions are further split into sub-dimensions.</div>
+        <div class="code-block"><pre><span class="cm">-- Correct clause order:</span>
+<span class="kw">SELECT</span>   col, <span class="fn">COUNT</span>(*)     <span class="cm">-- 5th: what to show</span>
+<span class="kw">FROM</span>     table              <span class="cm">-- 1st: where data is</span>
+<span class="kw">WHERE</span>    condition          <span class="cm">-- 2nd: filter rows</span>
+<span class="kw">GROUP BY</span> col               <span class="cm">-- 3rd: bundle groups</span>
+<span class="kw">HAVING</span>   <span class="fn">COUNT</span>(*) &gt; <span class="num">1</span>     <span class="cm">-- 4th: filter groups</span>
+<span class="kw">ORDER BY</span> col <span class="kw">DESC</span>          <span class="cm">-- 6th: sort output</span></pre></div>
+        <div class="warn">⚠️ This is the most-tested SQL concept in interviews. Memorize it like an alphabet — it never changes.</div>
+        <div class="keys"><span class="kc">FROM first</span><span class="kc">WHERE before GROUP BY</span><span class="kc">HAVING after GROUP BY</span></div>
+        <div class="teach">Think of building a report: first find your table, filter out bad rows, bundle what's left, filter the bundles, then decide what columns to show and in what order.</div>
       </div>
-      <div class="spaced-repeat">
+      <div class="sr-wrap">
         <div class="sr-label">Spaced Repeat</div>
         <div class="sr-chips">
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
-        </div>
-      </div>
-    </article>
-
-    <!-- CARD 11: Fact Table Types -->
-    <article class="rcard">
-      <div class="rcard-header">
-        <div class="rcard-num">11</div>
-        <div>
-          <div class="rcard-title">Types of Fact Tables</div>
-          <div class="rcard-tag">Modeling</div>
-        </div>
-      </div>
-      <div class="rcard-body">
-        <div class="hook">"Transaction = snapshot in time. Periodic = end of period. Accumulating = lifecycle of a process."</div>
-        <div class="mental-model">
-          <div class="before"><span>Before:</span> There's only one kind of fact table — just rows of events.</div>
-          <div class="after"><span>After:</span> Transaction (each event), Periodic Snapshot (state at regular intervals), Accumulating Snapshot (one row per process lifecycle, updated as it progresses).</div>
-        </div>
-        <div class="warning">⚠️ Accumulating snapshots violate "append-only" — rows get updated as pipeline stages complete. Design for this explicitly.</div>
-        <div class="keys"><span class="key-chip">transaction</span><span class="key-chip">periodic snapshot</span><span class="key-chip">accumulating snapshot</span></div>
-        <div class="teach-it">Order placed → shipped → delivered: one row in accumulating snapshot, updated at each stage. Monthly inventory: periodic snapshot. Each sale: transaction fact.</div>
-      </div>
-      <div class="spaced-repeat">
-        <div class="sr-label">Spaced Repeat</div>
-        <div class="sr-chips">
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
-        </div>
-      </div>
-    </article>
-
-    <!-- CARD 12: Dimension Table Types -->
-    <article class="rcard">
-      <div class="rcard-header">
-        <div class="rcard-num">12</div>
-        <div>
-          <div class="rcard-title">Types of Dimension Tables</div>
-          <div class="rcard-tag">Modeling</div>
-        </div>
-      </div>
-      <div class="rcard-body">
-        <div class="hook">"Conformed = shared. Junk = low-cardinality flags. Degenerate = the order number on the receipt."</div>
-        <div class="mental-model">
-          <div class="before"><span>Before:</span> Dimensions are just lookup tables with an ID and description.</div>
-          <div class="after"><span>After:</span> Conformed (shared across facts), Junk (combined flag/indicator dim), Degenerate (key stored directly in fact), Role-playing (same dim used twice with aliases).</div>
-        </div>
-        <div class="warning">⚠️ Role-playing dimensions need VIEW aliases — never physically duplicate the table.</div>
-        <div class="keys"><span class="key-chip">conformed</span><span class="key-chip">junk</span><span class="key-chip">degenerate</span></div>
-        <div class="teach-it">The Date dimension is conformed — used by Sales facts, HR facts, Inventory facts. Order number on a receipt is degenerate — stored in the fact, not its own table.</div>
-      </div>
-      <div class="spaced-repeat">
-        <div class="sr-label">Spaced Repeat</div>
-        <div class="sr-chips">
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
-        </div>
-      </div>
-    </article>
-
-    <!-- CARD 13: Natural vs Surrogate Keys -->
-    <article class="rcard">
-      <div class="rcard-header">
-        <div class="rcard-num">13</div>
-        <div>
-          <div class="rcard-title">Natural vs Surrogate Keys</div>
-          <div class="rcard-tag">Modeling</div>
-        </div>
-      </div>
-      <div class="rcard-body">
-        <div class="hook">"Natural key = the business ID. Surrogate key = the DW's own ID. Always use surrogate keys in DW."</div>
-        <div class="mental-model">
-          <div class="before"><span>Before:</span> Just use the business ID (email, product code) as the PK — it's already unique.</div>
-          <div class="after"><span>After:</span> Surrogate keys (auto-generated integers) protect against source system changes, allow SCD tracking, and improve join performance.</div>
-        </div>
-        <div class="warning">⚠️ Never expose surrogate keys to end users — they're internal DW plumbing with no business meaning.</div>
-        <div class="keys"><span class="key-chip">surrogate = system-generated</span><span class="key-chip">natural = business key</span><span class="key-chip">SCD compatibility</span></div>
-        <div class="teach-it">Your employee ID is the natural key. The DW assigns its own secret number (surrogate key) so even if the employee ID changes, history is preserved.</div>
-      </div>
-      <div class="spaced-repeat">
-        <div class="sr-label">Spaced Repeat</div>
-        <div class="sr-chips">
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="src" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 month</span>
         </div>
       </div>
     </article>
@@ -580,169 +433,53 @@
   </div>
 </section>
 
-<div class="pull-quote-section">
-  <blockquote>"Slowly Changing Dimensions are the hardest concept to get right — and the most critical to get right for historical accuracy."</blockquote>
-  <cite>Chapter 4 — ETL & SCDs Insight</cite>
-</div>
-
-<!-- ═══════════════════════════════════════════════════ -->
-<!-- CHAPTER 4: ETL, SCDs & LOADING -->
-<!-- ═══════════════════════════════════════════════════ -->
+<!-- ═══ CHAPTER 4: HAVING ═══ -->
 <section id="ch4">
-  <div class="chapter-header">
-    <div class="chapter-num">Chapter 04</div>
-    <h2>ETL, SCDs &amp; Data Loading</h2>
-    <p>Slowly Changing Dimensions, staging, file formats, and COPY INTO</p>
+  <div class="ch-header">
+    <div class="ch-num">Chapter 04</div>
+    <h2>HAVING — Filtering After Grouping</h2>
+    <p>The one clause WHERE can't do — filtering on aggregate results</p>
   </div>
+  <div class="cg">
 
-  <div class="card-grid">
-
-    <!-- CARD 14: SCD Types -->
-    <article class="rcard">
-      <div class="rcard-header">
-        <div class="rcard-num">14</div>
+    <article class="rc">
+      <div class="rc-head">
+        <div class="rc-n">07</div>
         <div>
-          <div class="rcard-title">SCD Type 1, 2, 3, 6</div>
-          <div class="rcard-tag">SCDs</div>
+          <div class="rc-title">HAVING vs WHERE — The Interview Classic</div>
+          <div class="rc-tag tag-hav">HAVING</div>
         </div>
       </div>
-      <div class="rcard-body">
-        <div class="hook">"Type 1 = overwrite (forget). Type 2 = new row (remember everything). Type 3 = previous column (remember one change). Type 6 = hybrid."</div>
-        <div class="mental-model">
-          <div class="before"><span>Before:</span> Just update the record when something changes — no need to keep history.</div>
-          <div class="after"><span>After:</span> Type 1 loses history. Type 2 adds new row with effective dates + is_current flag. Type 3 adds old/new column. Type 6 = 1+2+3 combined.</div>
+      <div class="rc-body">
+        <div class="hook">"WHERE filters rows. HAVING filters groups. They can't swap jobs."</div>
+        <div class="mm">
+          <div class="bef"><span>Before:</span> Use WHERE to filter on COUNT() or SUM() results.</div>
+          <div class="aft"><span>After:</span> WHERE runs before GROUP BY — it doesn't know what COUNT() will produce. HAVING runs after GROUP BY and sees aggregated results.</div>
         </div>
-        <div class="warning">⚠️ SCD Type 2 requires surrogate keys — you can't have two rows with the same natural key as PK.</div>
-        <div class="keys"><span class="key-chip">effective_date</span><span class="key-chip">is_current</span><span class="key-chip">expiry_date</span></div>
-        <div class="teach-it">Customer moves cities. Type 1: update city field. Type 2: keep old row, add new row. Type 3: add "previous_city" column. Type 6: all of the above.</div>
+        <div class="code-block"><pre><span class="cm">-- Find users who watched MORE than 1 show</span>
+<span class="kw">SELECT</span> user_id, <span class="fn">COUNT</span>(watch_id) <span class="kw">AS</span> cnt
+<span class="kw">FROM</span> watch_history
+<span class="kw">GROUP BY</span> user_id
+<span class="kw">HAVING</span> <span class="fn">COUNT</span>(watch_id) &gt; <span class="num">1</span>;</pre></div>
+        <div class="code-block"><pre><span class="cm">-- Decision rule:</span>
+<span class="cm">-- Raw column value → WHERE</span>
+<span class="cm">-- Aggregate result (COUNT,SUM,AVG) → HAVING</span>
+<span class="cm">-- No GROUP BY → no HAVING needed</span></pre></div>
+        <table class="cmp-table">
+          <tr><th>Clause</th><th>Filters</th><th>Runs</th><th>Can use aggregates?</th></tr>
+          <tr><td>WHERE</td><td>Individual rows</td><td>Before GROUP BY</td><td>❌ No</td></tr>
+          <tr><td>HAVING</td><td>Grouped results</td><td>After GROUP BY</td><td>✅ Yes</td></tr>
+        </table>
+        <div class="keys"><span class="kc">HAVING = post-group filter</span><span class="kc">WHERE = pre-group filter</span></div>
+        <div class="teach">You can't ask "which bucket has more than 5 items?" before you've filled the buckets. HAVING asks the question after GROUP BY has filled them.</div>
       </div>
-      <div class="spaced-repeat">
+      <div class="sr-wrap">
         <div class="sr-label">Spaced Repeat</div>
         <div class="sr-chips">
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
-        </div>
-      </div>
-    </article>
-
-    <!-- CARD 15: Stage & COPY INTO -->
-    <article class="rcard">
-      <div class="rcard-header">
-        <div class="rcard-num">15</div>
-        <div>
-          <div class="rcard-title">Stages &amp; COPY INTO</div>
-          <div class="rcard-tag">Data Loading</div>
-        </div>
-      </div>
-      <div class="rcard-body">
-        <div class="hook">"A Stage is a landing zone. COPY INTO is the loader. Together they replace most ETL tools."</div>
-        <div class="mental-model">
-          <div class="before"><span>Before:</span> Load files directly from local disk into Snowflake.</div>
-          <div class="after"><span>After:</span> PUT files → Internal Stage (Snowflake-managed) OR use External Stage (S3/Azure/GCS) → COPY INTO table. Stages are temporary file storage.</div>
-        </div>
-        <div class="warning">⚠️ COPY INTO is idempotent by default (tracks loaded files) — re-running won't duplicate data unless you use FORCE=TRUE.</div>
-        <div class="keys"><span class="key-chip">internal stage</span><span class="key-chip">external stage</span><span class="key-chip">COPY INTO</span></div>
-        <div class="teach-it">You put your CSV on a loading dock (stage), then tell Snowflake to move it into the warehouse (COPY INTO). Snowflake remembers which files it already loaded.</div>
-      </div>
-      <div class="spaced-repeat">
-        <div class="sr-label">Spaced Repeat</div>
-        <div class="sr-chips">
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
-        </div>
-      </div>
-    </article>
-
-    <!-- CARD 16: File Formats -->
-    <article class="rcard">
-      <div class="rcard-header">
-        <div class="rcard-num">16</div>
-        <div>
-          <div class="rcard-title">File Formats in Snowflake</div>
-          <div class="rcard-tag">Data Loading</div>
-        </div>
-      </div>
-      <div class="rcard-body">
-        <div class="hook">"Parquet = columnar, fast analytics. ORC = Hive-optimized. Avro = row-based, schema evolution. CSV = simplest but slowest."</div>
-        <div class="mental-model">
-          <div class="before"><span>Before:</span> CSV is fine for all data loads — it's universal.</div>
-          <div class="after"><span>After:</span> Parquet/ORC are 2–10x faster for analytics (columnar compression). Avro supports schema evolution. JSON/XML for semi-structured. CSV for simplicity only.</div>
-        </div>
-        <div class="warning">⚠️ Always create a named FILE FORMAT object in Snowflake — don't inline format options in every COPY INTO statement.</div>
-        <div class="keys"><span class="key-chip">Parquet</span><span class="key-chip">columnar</span><span class="key-chip">FILE FORMAT object</span></div>
-        <div class="teach-it">Parquet stores a column of 1 million prices together, so "total revenue" queries only read prices. CSV reads every field in every row — much slower.</div>
-      </div>
-      <div class="spaced-repeat">
-        <div class="sr-label">Spaced Repeat</div>
-        <div class="sr-chips">
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
-        </div>
-      </div>
-    </article>
-
-    <!-- CARD 17: Storage Integration -->
-    <article class="rcard">
-      <div class="rcard-header">
-        <div class="rcard-num">17</div>
-        <div>
-          <div class="rcard-title">Storage Integration</div>
-          <div class="rcard-tag">Security</div>
-        </div>
-      </div>
-      <div class="rcard-body">
-        <div class="hook">"Storage Integration = the secure handshake between Snowflake and your S3/Azure bucket without embedding credentials."</div>
-        <div class="mental-model">
-          <div class="before"><span>Before:</span> Pass AWS access key + secret directly in the stage definition.</div>
-          <div class="after"><span>After:</span> Create STORAGE INTEGRATION object (IAM role trust) → Snowflake gets a managed service account → no secrets in SQL code.</div>
-        </div>
-        <div class="warning">⚠️ Storage Integrations require Account Admin to create — not a task for regular roles.</div>
-        <div class="keys"><span class="key-chip">IAM trust policy</span><span class="key-chip">no credentials in SQL</span><span class="key-chip">STORAGE INTEGRATION</span></div>
-        <div class="teach-it">Instead of giving Snowflake a key to your S3 house, you tell AWS "trust this Snowflake agent" — no key is ever passed around.</div>
-      </div>
-      <div class="spaced-repeat">
-        <div class="sr-label">Spaced Repeat</div>
-        <div class="sr-chips">
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
-        </div>
-      </div>
-    </article>
-
-    <!-- CARD 18: Snowpipe -->
-    <article class="rcard">
-      <div class="rcard-header">
-        <div class="rcard-num">18</div>
-        <div>
-          <div class="rcard-title">Snowpipe — Continuous Loading</div>
-          <div class="rcard-tag">Streaming</div>
-        </div>
-      </div>
-      <div class="rcard-body">
-        <div class="hook">"Snowpipe is event-driven COPY INTO — the moment a file lands in S3, it's loaded automatically."</div>
-        <div class="mental-model">
-          <div class="before"><span>Before:</span> Schedule a COPY INTO job every 15 minutes to check for new files.</div>
-          <div class="after"><span>After:</span> Snowpipe uses S3 Event Notifications → SQS → Snowpipe auto-ingest. Files loaded within seconds, no scheduled jobs needed.</div>
-        </div>
-        <div class="warning">⚠️ Snowpipe uses serverless compute — billed differently from virtual warehouses. Don't mix up cost models.</div>
-        <div class="keys"><span class="key-chip">auto-ingest</span><span class="key-chip">SQS notification</span><span class="key-chip">serverless billing</span></div>
-        <div class="teach-it">Snowpipe watches your S3 bucket. The second a new file appears, it automatically loads it into Snowflake — no one has to push a button.</div>
-      </div>
-      <div class="spaced-repeat">
-        <div class="sr-label">Spaced Repeat</div>
-        <div class="sr-chips">
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="src" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 month</span>
         </div>
       </div>
     </article>
@@ -750,332 +487,768 @@
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════════ -->
-<!-- CHAPTER 5: ADVANCED SNOWFLAKE -->
-<!-- ═══════════════════════════════════════════════════ -->
-<section id="ch5">
-  <div class="chapter-header">
-    <div class="chapter-num">Chapter 05</div>
-    <h2>Advanced Snowflake Features</h2>
-    <p>Time Travel, Undrop, Table Types, Zero Copy Clone, and Data Recovery</p>
-  </div>
-
-  <div class="card-grid">
-
-    <!-- CARD 19: Time Travel -->
-    <article class="rcard">
-      <div class="rcard-header">
-        <div class="rcard-num">19</div>
-        <div>
-          <div class="rcard-title">Time Travel</div>
-          <div class="rcard-tag">Recovery</div>
-        </div>
-      </div>
-      <div class="rcard-body">
-        <div class="hook">"Time Travel is a DVR for your data — rewind up to 90 days and query what used to be there."</div>
-        <div class="mental-model">
-          <div class="before"><span>Before:</span> Once you DELETE or UPDATE data, it's gone forever unless you have backups.</div>
-          <div class="after"><span>After:</span> Snowflake retains historical data for 0–90 days (Standard: 1 day, Enterprise: 90 days). Query with AT/BEFORE TIMESTAMP or OFFSET.</div>
-        </div>
-        <div class="warning">⚠️ Time Travel storage costs money — longer retention = more storage cost. Set DATA_RETENTION_TIME_IN_DAYS thoughtfully per table.</div>
-        <div class="keys"><span class="key-chip">AT TIMESTAMP</span><span class="key-chip">BEFORE STATEMENT</span><span class="key-chip">retention days</span></div>
-        <div class="teach-it">You accidentally deleted a table. Time Travel lets you go back to yesterday and see exactly what was there — like a database time machine.</div>
-      </div>
-      <div class="spaced-repeat">
-        <div class="sr-label">Spaced Repeat</div>
-        <div class="sr-chips">
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
-        </div>
-      </div>
-    </article>
-
-    <!-- CARD 20: Undrop -->
-    <article class="rcard">
-      <div class="rcard-header">
-        <div class="rcard-num">20</div>
-        <div>
-          <div class="rcard-title">Fail-Safe &amp; UNDROP</div>
-          <div class="rcard-tag">Recovery</div>
-        </div>
-      </div>
-      <div class="rcard-body">
-        <div class="hook">"UNDROP is undo for tables. Fail-Safe is the 7-day vault after Time Travel expires."</div>
-        <div class="mental-model">
-          <div class="before"><span>Before:</span> Dropped tables are gone — only backups can help.</div>
-          <div class="after"><span>After:</span> UNDROP TABLE/SCHEMA/DATABASE restores within Time Travel window. After TT expires, Fail-Safe gives 7 more days — but only Snowflake Support can access it.</div>
-        </div>
-        <div class="warning">⚠️ You cannot query Fail-Safe data yourself — only Snowflake Support can restore it, and it takes time. Don't rely on Fail-Safe for routine recovery.</div>
-        <div class="keys"><span class="key-chip">UNDROP TABLE</span><span class="key-chip">fail-safe 7 days</span><span class="key-chip">support-only access</span></div>
-        <div class="teach-it">UNDROP is like Ctrl+Z for tables — instant restore. Fail-Safe is like the backup hard drive your IT department holds — you have to ask them nicely.</div>
-      </div>
-      <div class="spaced-repeat">
-        <div class="sr-label">Spaced Repeat</div>
-        <div class="sr-chips">
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
-        </div>
-      </div>
-    </article>
-
-    <!-- CARD 21: Table Types -->
-    <article class="rcard">
-      <div class="rcard-header">
-        <div class="rcard-num">21</div>
-        <div>
-          <div class="rcard-title">Snowflake Table Types</div>
-          <div class="rcard-tag">Tables</div>
-        </div>
-      </div>
-      <div class="rcard-body">
-        <div class="hook">"Permanent = default, full TT+FS. Transient = lighter, no Fail-Safe. Temporary = session-only, vanishes."</div>
-        <div class="mental-model">
-          <div class="before"><span>Before:</span> All tables work the same way — just create and use.</div>
-          <div class="after"><span>After:</span> Permanent (full TT+FS, production), Transient (TT only, no FS, staging/intermediate), Temporary (session-scoped, no TT+FS, dev/testing).</div>
-        </div>
-        <div class="warning">⚠️ Staging tables should be Transient — no need for Fail-Safe on raw data you can reload. Saves storage cost.</div>
-        <div class="keys"><span class="key-chip">permanent</span><span class="key-chip">transient</span><span class="key-chip">temporary</span></div>
-        <div class="teach-it">Permanent is your real furniture. Transient is the rental furniture you use temporarily. Temporary is borrowing a chair — gone when you leave the session.</div>
-      </div>
-      <div class="spaced-repeat">
-        <div class="sr-label">Spaced Repeat</div>
-        <div class="sr-chips">
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
-        </div>
-      </div>
-    </article>
-
-    <!-- CARD 22: Zero Copy Clone -->
-    <article class="rcard">
-      <div class="rcard-header">
-        <div class="rcard-num">22</div>
-        <div>
-          <div class="rcard-title">Zero Copy Cloning</div>
-          <div class="rcard-tag">Efficiency</div>
-        </div>
-      </div>
-      <div class="rcard-body">
-        <div class="hook">"CLONE creates a full copy of a database or table instantly — without duplicating any storage."</div>
-        <div class="mental-model">
-          <div class="before"><span>Before:</span> Cloning a 10TB database requires 10TB of new storage and hours of copying.</div>
-          <div class="after"><span>After:</span> Zero Copy Clone shares micro-partitions between source and clone. Only new writes to either copy create additional storage. Clone is instant and nearly free.</div>
-        </div>
-        <div class="warning">⚠️ Cloning doesn't copy privileges — you must re-grant permissions on the cloned object.</div>
-        <div class="keys"><span class="key-chip">shared micro-partitions</span><span class="key-chip">copy-on-write</span><span class="key-chip">CLONE keyword</span></div>
-        <div class="teach-it">Imagine a shortcut on your desktop — it points to the same file, takes no extra space. Only when you edit the copy does a real duplicate get made.</div>
-      </div>
-      <div class="spaced-repeat">
-        <div class="sr-label">Spaced Repeat</div>
-        <div class="sr-chips">
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
-        </div>
-      </div>
-    </article>
-
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════ -->
-<!-- CHAPTER 6: POWER FEATURES -->
-<!-- ═══════════════════════════════════════════════════ -->
-<section id="ch6">
-  <div class="chapter-header">
-    <div class="chapter-num">Chapter 06</div>
-    <h2>Power Features</h2>
-    <p>Data Sharing, Materialized Views, and Dynamic Data Masking</p>
-  </div>
-
-  <div class="card-grid">
-
-    <!-- CARD 23: Data Sharing -->
-    <article class="rcard">
-      <div class="rcard-header">
-        <div class="rcard-num">23</div>
-        <div>
-          <div class="rcard-title">Snowflake Data Sharing</div>
-          <div class="rcard-tag">Sharing</div>
-        </div>
-      </div>
-      <div class="rcard-body">
-        <div class="hook">"Share live data across accounts — no ETL, no copies, no lag. Consumers read your data directly."</div>
-        <div class="mental-model">
-          <div class="before"><span>Before:</span> Share data by exporting files and sending them to partners.</div>
-          <div class="after"><span>After:</span> CREATE SHARE → grant database objects → consumers create databases from share → they query your live data through their own virtual warehouse. Provider pays for storage, consumer for compute.</div>
-        </div>
-        <div class="warning">⚠️ Shared data is read-only to consumers. They cannot modify or load into the share objects.</div>
-        <div class="keys"><span class="key-chip">CREATE SHARE</span><span class="key-chip">provider/consumer</span><span class="key-chip">no data copy</span></div>
-        <div class="teach-it">Like giving someone a key to read your Google Doc — they see live updates instantly, no download needed. You control what they can see.</div>
-      </div>
-      <div class="spaced-repeat">
-        <div class="sr-label">Spaced Repeat</div>
-        <div class="sr-chips">
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
-        </div>
-      </div>
-    </article>
-
-    <!-- CARD 24: Materialized Views -->
-    <article class="rcard">
-      <div class="rcard-header">
-        <div class="rcard-num">24</div>
-        <div>
-          <div class="rcard-title">Materialized Views</div>
-          <div class="rcard-tag">Performance</div>
-        </div>
-      </div>
-      <div class="rcard-body">
-        <div class="hook">"A Materialized View is a pre-computed query result stored as a table — automatically refreshed by Snowflake."</div>
-        <div class="mental-model">
-          <div class="before"><span>Before:</span> Regular views execute the query on every call — expensive for complex aggregations.</div>
-          <div class="after"><span>After:</span> Materialized views store the query result. Snowflake auto-refreshes when base table data changes (using background serverless compute). Queries hit the cache.</div>
-        </div>
-        <div class="warning">⚠️ Materialized views have restrictions: no joins on multiple tables in some editions, no non-deterministic functions, no UDFs. Check docs before using.</div>
-        <div class="keys"><span class="key-chip">pre-computed</span><span class="key-chip">auto-refresh</span><span class="key-chip">serverless maintenance</span></div>
-        <div class="teach-it">Instead of calculating the daily sales total every time someone asks, you pre-calculate and store it. When new sales come in, Snowflake quietly updates the answer.</div>
-      </div>
-      <div class="spaced-repeat">
-        <div class="sr-label">Spaced Repeat</div>
-        <div class="sr-chips">
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
-        </div>
-      </div>
-    </article>
-
-    <!-- CARD 25: Dynamic Data Masking -->
-    <article class="rcard">
-      <div class="rcard-header">
-        <div class="rcard-num">25</div>
-        <div>
-          <div class="rcard-title">Dynamic Data Masking</div>
-          <div class="rcard-tag">Security</div>
-        </div>
-      </div>
-      <div class="rcard-body">
-        <div class="hook">"Same table, same query — an analyst sees ***-**-1234, an HR manager sees the full SSN."</div>
-        <div class="mental-model">
-          <div class="before"><span>Before:</span> Create separate masked views per role — maintain multiple objects as data changes.</div>
-          <div class="after"><span>After:</span> Create MASKING POLICY with conditional logic → apply to column → Snowflake applies at query time based on current_role(). One object, multiple visibility levels.</div>
-        </div>
-        <div class="warning">⚠️ Masking policies are applied at query time, not storage time — the underlying data is never modified. This is critical for compliance.</div>
-        <div class="keys"><span class="key-chip">MASKING POLICY</span><span class="key-chip">current_role()</span><span class="key-chip">column-level security</span></div>
-        <div class="teach-it">The same employee table exists once. When a junior analyst queries it, SSNs show as ****. When HR queries it, they see the real numbers — same data, different masks.</div>
-      </div>
-      <div class="spaced-repeat">
-        <div class="sr-label">Spaced Repeat</div>
-        <div class="sr-chips">
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
-        </div>
-      </div>
-    </article>
-
-    <!-- CARD 26: Row Access Policies / RBAC -->
-    <article class="rcard">
-      <div class="rcard-header">
-        <div class="rcard-num">26</div>
-        <div>
-          <div class="rcard-title">RBAC &amp; Row Access Policies</div>
-          <div class="rcard-tag">Security</div>
-        </div>
-      </div>
-      <div class="rcard-body">
-        <div class="hook">"RBAC controls what objects you can touch. Row Access Policies control which rows you can see within those objects."</div>
-        <div class="mental-model">
-          <div class="before"><span>Before:</span> Use WHERE clauses in views to filter rows by user.</div>
-          <div class="after"><span>After:</span> RBAC = role hierarchy (ACCOUNTADMIN → SYSADMIN → custom roles). Row Access Policy = centralized row-level filter applied transparently at query time per role/user.</div>
-        </div>
-        <div class="warning">⚠️ Row Access Policies are transparent to users — they don't know rows are being filtered. Document this for auditors.</div>
-        <div class="keys"><span class="key-chip">role hierarchy</span><span class="key-chip">ROW ACCESS POLICY</span><span class="key-chip">SYSADMIN vs SECURITYADMIN</span></div>
-        <div class="teach-it">RBAC is the key card that gets you into a building. Row Access Policy is the office door that only shows you your department's files once you're inside.</div>
-      </div>
-      <div class="spaced-repeat">
-        <div class="sr-label">Spaced Repeat</div>
-        <div class="sr-chips">
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 day</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">3 days</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 week</span>
-          <span class="sr-chip" onclick="this.classList.toggle('done')">1 month</span>
-        </div>
-      </div>
-    </article>
-
-  </div>
-</section>
-
-<div class="pull-quote-section">
-  <blockquote>"Zero Copy Clone and Time Travel alone justify Snowflake for any team serious about data reliability. Everything else is a bonus."</blockquote>
-  <cite>Chapter 6 — Power Features Insight</cite>
+<div class="pq">
+  <blockquote>"The WHERE vs HAVING distinction is one of the most reliably tested SQL concepts in data engineering interviews — not because it's complicated, but because it's easy to forget under pressure."</blockquote>
+  <cite>Chapter 4 — HAVING Insight</cite>
 </div>
 
-<!-- FOOTER -->
+<!-- ═══ CHAPTER 5: JOINs ═══ -->
+<section id="ch5">
+  <div class="ch-header">
+    <div class="ch-num">Chapter 05</div>
+    <h2>JOINs — Connecting Tables</h2>
+    <p>Finding the bridge table, JOIN types, and multi-table queries</p>
+  </div>
+  <div class="cg">
+
+    <article class="rc">
+      <div class="rc-head">
+        <div class="rc-n">08</div>
+        <div>
+          <div class="rc-title">JOIN — The Bridge Table Mental Model</div>
+          <div class="rc-tag tag-join">JOIN</div>
+        </div>
+      </div>
+      <div class="rc-body">
+        <div class="hook">"When you need data from multiple tables, find the table that holds the foreign keys — that's your bridge. Start there."</div>
+        <div class="mm">
+          <div class="bef"><span>Before:</span> Join whichever tables seem closest together.</div>
+          <div class="aft"><span>After:</span> watch_history holds both user_id and show_id — it's the bridge. Start from the bridge, then JOIN outward to users and shows.</div>
+        </div>
+        <div class="code-block"><pre><span class="kw">SELECT</span> u.name, s.title, w.watched_on
+<span class="kw">FROM</span> watch_history w
+<span class="kw">JOIN</span> users u  <span class="kw">ON</span> w.user_id = u.user_id
+<span class="kw">JOIN</span> shows s  <span class="kw">ON</span> w.show_id = s.show_id
+<span class="kw">WHERE</span> w.completed = <span class="kw">TRUE</span>;</pre></div>
+        <div class="warn">⚠️ JOIN on the wrong table = zero rows or wrong results. users doesn't have show_id — only watch_history does. Always trace the foreign keys.</div>
+        <div class="keys"><span class="kc">bridge table</span><span class="kc">ON = join condition</span><span class="kc">alias w, u, s</span></div>
+        <div class="teach">You need the user's name and show's title — but they don't share a table. watch_history is the bridge: it knows which user watched which show.</div>
+      </div>
+      <div class="sr-wrap">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="src" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="src" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="rc">
+      <div class="rc-head">
+        <div class="rc-n">09</div>
+        <div>
+          <div class="rc-title">INNER vs LEFT JOIN</div>
+          <div class="rc-tag tag-join">JOIN</div>
+        </div>
+      </div>
+      <div class="rc-body">
+        <div class="hook">"INNER JOIN = only matched rows survive. LEFT JOIN = all left-side rows survive, NULLs fill unmatched right-side."</div>
+        <div class="mm">
+          <div class="bef"><span>Before:</span> Use INNER JOIN by default — it works for all situations.</div>
+          <div class="aft"><span>After:</span> INNER JOIN hides users with no subscription. LEFT JOIN keeps them with NULL in the plan column. Choose based on whether you want to see the unmatched rows.</div>
+        </div>
+        <div class="code-block"><pre><span class="cm">-- INNER: only users WITH a subscription</span>
+<span class="kw">SELECT</span> u.name, s.plan
+<span class="kw">FROM</span> users u
+<span class="kw">JOIN</span> subscriptions s <span class="kw">ON</span> u.user_id = s.user_id;
+
+<span class="cm">-- LEFT: ALL users, NULL plan if no subscription</span>
+<span class="kw">SELECT</span> u.name, s.plan
+<span class="kw">FROM</span> users u
+<span class="kw">LEFT JOIN</span> subscriptions s <span class="kw">ON</span> u.user_id = s.user_id;</pre></div>
+        <div class="warn">⚠️ To find users with NO subscription: LEFT JOIN + WHERE s.user_id IS NULL. This is the anti-join pattern.</div>
+        <div class="keys"><span class="kc">INNER = intersection</span><span class="kc">LEFT = preserve left</span><span class="kc">anti-join = LEFT + IS NULL</span></div>
+        <div class="teach">You want to see every user even if they have no subscription? LEFT JOIN. You only want users with subscriptions? INNER JOIN.</div>
+      </div>
+      <div class="sr-wrap">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="src" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="src" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<!-- ═══ CHAPTER 6: CTEs & SUBQUERIES ═══ -->
+<section id="ch6">
+  <div class="ch-header">
+    <div class="ch-num">Chapter 06</div>
+    <h2>CTEs &amp; Subqueries</h2>
+    <p>Writing reusable query blocks and combining result sets</p>
+  </div>
+  <div class="cg">
+
+    <article class="rc">
+      <div class="rc-head">
+        <div class="rc-n">10</div>
+        <div>
+          <div class="rc-title">Subquery — IN vs EXISTS</div>
+          <div class="rc-tag tag-sub">Subquery</div>
+        </div>
+      </div>
+      <div class="rc-body">
+        <div class="hook">"IN builds a list then checks membership. EXISTS stops as soon as it finds one match — faster on large tables."</div>
+        <div class="mm">
+          <div class="bef"><span>Before:</span> IN and EXISTS are interchangeable — use whichever looks easier.</div>
+          <div class="aft"><span>After:</span> IN returns a full list of values for comparison. EXISTS is a correlated subquery that short-circuits on first match. EXISTS wins on performance for large datasets.</div>
+        </div>
+        <div class="code-block"><pre><span class="cm">-- IN: subquery in WHERE</span>
+<span class="kw">SELECT</span> name <span class="kw">FROM</span> users
+<span class="kw">WHERE</span> user_id <span class="kw">IN</span> (
+  <span class="kw">SELECT</span> user_id <span class="kw">FROM</span> watch_history
+  <span class="kw">WHERE</span> completed = <span class="kw">TRUE</span>
+);
+
+<span class="cm">-- EXISTS: correlated subquery</span>
+<span class="kw">SELECT</span> name <span class="kw">FROM</span> users u
+<span class="kw">WHERE</span> <span class="kw">EXISTS</span> (
+  <span class="kw">SELECT</span> <span class="num">1</span> <span class="kw">FROM</span> watch_history w
+  <span class="kw">WHERE</span> w.user_id = u.user_id
+    <span class="kw">AND</span> w.completed = <span class="kw">TRUE</span>
+);</pre></div>
+        <div class="warn">⚠️ NOT IN fails silently if the subquery returns any NULLs — prefer NOT EXISTS for safety.</div>
+        <div class="keys"><span class="kc">IN = list check</span><span class="kc">EXISTS = early exit</span><span class="kc">NOT EXISTS = safer than NOT IN</span></div>
+        <div class="teach">IN: "Is your ID in this list of completers?" EXISTS: "Does even one completion record exist for you?" — same result, different efficiency.</div>
+      </div>
+      <div class="sr-wrap">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="src" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="src" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="rc">
+      <div class="rc-head">
+        <div class="rc-n">11</div>
+        <div>
+          <div class="rc-title">CTE — Named Temporary Results</div>
+          <div class="rc-tag tag-sub">CTE</div>
+        </div>
+      </div>
+      <div class="rc-body">
+        <div class="hook">"A CTE is a subquery with a name. It makes complex queries readable by giving intermediate steps a label."</div>
+        <div class="mm">
+          <div class="bef"><span>Before:</span> Nest subquery inside subquery inside subquery.</div>
+          <div class="aft"><span>After:</span> WITH cte_name AS (…) defines a named block you can reference like a table. Multiple CTEs can be chained. Query reads top-to-bottom like a story.</div>
+        </div>
+        <div class="code-block"><pre><span class="kw">WITH</span> premium_users <span class="kw">AS</span> (
+  <span class="kw">SELECT</span> user_id
+  <span class="kw">FROM</span> subscriptions
+  <span class="kw">WHERE</span> plan = <span class="str">'Premium'</span>
+),
+completers <span class="kw">AS</span> (
+  <span class="kw">SELECT</span> user_id
+  <span class="kw">FROM</span> watch_history
+  <span class="kw">WHERE</span> completed = <span class="kw">TRUE</span>
+)
+<span class="kw">SELECT</span> u.name
+<span class="kw">FROM</span> users u
+<span class="kw">WHERE</span> u.user_id <span class="kw">IN</span> (<span class="kw">SELECT</span> user_id <span class="kw">FROM</span> premium_users)
+  <span class="kw">AND</span> u.user_id <span class="kw">IN</span> (<span class="kw">SELECT</span> user_id <span class="kw">FROM</span> completers);</pre></div>
+        <div class="warn">⚠️ CTEs are not always faster than subqueries — some engines materialize them, others inline them. Test before assuming CTE = performance.</div>
+        <div class="keys"><span class="kc">WITH name AS (...)</span><span class="kc">chain CTEs with comma</span><span class="kc">readable = maintainable</span></div>
+        <div class="teach">Instead of one giant nested query, define premium_users and completers separately at the top, then join the simple named blocks together at the bottom.</div>
+      </div>
+      <div class="sr-wrap">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="src" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="src" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<div class="pq">
+  <blockquote>"CTEs are not a performance feature — they're a readability feature. Write them for the next person who reads your query, which is often future you."</blockquote>
+  <cite>Chapter 6 — CTE Insight</cite>
+</div>
+
+<!-- ═══ CHAPTER 7: WINDOW FUNCTIONS ═══ -->
+<section id="ch7">
+  <div class="ch-header">
+    <div class="ch-num">Chapter 07</div>
+    <h2>Window Functions</h2>
+    <p>RANK, DENSE_RANK, ROW_NUMBER, running totals, and OVER()</p>
+  </div>
+  <div class="cg">
+
+    <article class="rc">
+      <div class="rc-head">
+        <div class="rc-n">12</div>
+        <div>
+          <div class="rc-title">RANK vs DENSE_RANK vs ROW_NUMBER</div>
+          <div class="rc-tag tag-win">Window</div>
+        </div>
+      </div>
+      <div class="rc-body">
+        <div class="hook">"Three ranking functions. One question: what happens when two values tie?"</div>
+        <div class="mm">
+          <div class="bef"><span>Before:</span> Use RANK() for all ranking tasks — it's the obvious choice.</div>
+          <div class="aft"><span>After:</span> RANK() = ties share rank, next rank skips. DENSE_RANK() = ties share rank, next rank doesn't skip. ROW_NUMBER() = no ties, always unique sequential number.</div>
+        </div>
+        <div class="code-block"><pre><span class="kw">SELECT</span> user_id, total_minutes,
+  <span class="fn">RANK</span>()       <span class="kw">OVER</span> (<span class="kw">ORDER BY</span> total_minutes <span class="kw">DESC</span>) <span class="kw">AS</span> rnk,
+  <span class="fn">DENSE_RANK</span>() <span class="kw">OVER</span> (<span class="kw">ORDER BY</span> total_minutes <span class="kw">DESC</span>) <span class="kw">AS</span> dense_rnk,
+  <span class="fn">ROW_NUMBER</span>() <span class="kw">OVER</span> (<span class="kw">ORDER BY</span> total_minutes <span class="kw">DESC</span>) <span class="kw">AS</span> row_num
+<span class="kw">FROM</span> user_totals;</pre></div>
+        <table class="cmp-table">
+          <tr><th>Function</th><th>Ties get...</th><th>After ties...</th></tr>
+          <tr><td>ROW_NUMBER()</td><td>Different numbers</td><td>Continues 1,2,3,4</td></tr>
+          <tr><td>RANK()</td><td>Same number</td><td>Skips: 1,1,3</td></tr>
+          <tr><td>DENSE_RANK()</td><td>Same number</td><td>No skip: 1,1,2</td></tr>
+        </table>
+        <div class="keys"><span class="kc">RANK = skip after ties</span><span class="kc">DENSE_RANK = no skip</span><span class="kc">ROW_NUMBER = always unique</span></div>
+        <div class="teach">Two people tied for 1st place. RANK: 1, 1, 3. DENSE_RANK: 1, 1, 2. ROW_NUMBER: 1, 2, 3 (one gets lucky, one doesn't).</div>
+      </div>
+      <div class="sr-wrap">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="src" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="src" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="rc">
+      <div class="rc-head">
+        <div class="rc-n">13</div>
+        <div>
+          <div class="rc-title">OVER() — The Window Function Anatomy</div>
+          <div class="rc-tag tag-win">Window</div>
+        </div>
+      </div>
+      <div class="rc-body">
+        <div class="hook">"OVER() is what makes a function a window function. Without it, SUM() collapses rows. With it, SUM() looks across rows."</div>
+        <div class="mm">
+          <div class="bef"><span>Before:</span> SUM() always collapses rows into one total.</div>
+          <div class="aft"><span>After:</span> SUM() OVER (PARTITION BY user_id ORDER BY watched_on) computes a running total per user — without collapsing any rows.</div>
+        </div>
+        <div class="code-block"><pre><span class="cm">-- Running total per user</span>
+<span class="kw">SELECT</span> user_id, watched_on, minutes_watched,
+  <span class="fn">SUM</span>(minutes_watched)
+    <span class="kw">OVER</span> (<span class="kw">PARTITION BY</span> user_id
+          <span class="kw">ORDER BY</span> watched_on) <span class="kw">AS</span> running_total
+<span class="kw">FROM</span> watch_history;
+
+<span class="cm">-- Compare to group average</span>
+<span class="kw">SELECT</span> user_id, minutes_watched,
+  <span class="fn">AVG</span>(minutes_watched)
+    <span class="kw">OVER</span> (<span class="kw">PARTITION BY</span> user_id) <span class="kw">AS</span> avg_per_user
+<span class="kw">FROM</span> watch_history;</pre></div>
+        <div class="warn">⚠️ PARTITION BY = "restart the window for each group." ORDER BY inside OVER = "accumulate in this order." Both are optional but powerful.</div>
+        <div class="keys"><span class="kc">PARTITION BY = reset per group</span><span class="kc">ORDER BY in OVER = accumulate</span><span class="kc">no GROUP BY needed</span></div>
+        <div class="teach">OVER() says: "look at these rows as a window, compute something across them, but don't collapse them into one." Each row keeps its own value.</div>
+      </div>
+      <div class="sr-wrap">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="src" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="src" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="rc">
+      <div class="rc-head">
+        <div class="rc-n">14</div>
+        <div>
+          <div class="rc-title">CTE + Window Function Pattern</div>
+          <div class="rc-tag tag-win">Window</div>
+        </div>
+      </div>
+      <div class="rc-body">
+        <div class="hook">"Aggregate first in a CTE, rank second in the outer query. Two steps, perfectly clean."</div>
+        <div class="mm">
+          <div class="bef"><span>Before:</span> Try to GROUP BY and apply RANK() in the same SELECT.</div>
+          <div class="aft"><span>After:</span> Compute totals in the CTE. Apply RANK() OVER in the final SELECT. Two clean layers — easier to debug, easier to extend.</div>
+        </div>
+        <div class="code-block"><pre><span class="kw">WITH</span> user_totals <span class="kw">AS</span> (
+  <span class="kw">SELECT</span> user_id,
+         <span class="fn">SUM</span>(minutes_watched) <span class="kw">AS</span> total_minutes
+  <span class="kw">FROM</span> watch_history
+  <span class="kw">GROUP BY</span> user_id
+)
+<span class="kw">SELECT</span> user_id,
+       total_minutes,
+       <span class="fn">RANK</span>() <span class="kw">OVER</span> (<span class="kw">ORDER BY</span> total_minutes <span class="kw">DESC</span>) <span class="kw">AS</span> rnk
+<span class="kw">FROM</span> user_totals;</pre></div>
+        <div class="warn">⚠️ SUM() ignores NULLs — users with only NULL minutes still appear but get NULL total_minutes. Use COALESCE(SUM(...), 0) to treat them as 0.</div>
+        <div class="keys"><span class="kc">CTE = step 1 totals</span><span class="kc">RANK() OVER = step 2</span><span class="kc">COALESCE for NULLs</span></div>
+        <div class="teach">First CTE computes total minutes per user. Then RANK() looks at all those totals and assigns 1st, 2nd, 3rd place — ties share their rank.</div>
+      </div>
+      <div class="sr-wrap">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="src" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="src" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<!-- ═══ CHAPTER 8: PATTERN LIBRARY ═══ -->
+<section id="ch8">
+  <div class="ch-header">
+    <div class="ch-num">Chapter 08</div>
+    <h2>Pattern Library — 25 Query Styles</h2>
+    <p>Five styles for each of the five core concepts — your reference sheet</p>
+  </div>
+  <div class="cg">
+
+    <!-- CTE PATTERNS -->
+    <article class="rc wide">
+      <div class="rc-head">
+        <div class="rc-n">15</div>
+        <div>
+          <div class="rc-title">CTE — 5 Patterns to Know</div>
+          <div class="rc-tag tag-sub">CTE Patterns</div>
+        </div>
+      </div>
+      <div class="rc-body">
+        <div class="pattern-grid">
+          <div class="pg-item">
+            <h4>1 · Basic CTE</h4>
+            <div class="code-block"><pre><span class="kw">WITH</span> premium <span class="kw">AS</span> (
+  <span class="kw">SELECT</span> user_id <span class="kw">FROM</span> subscriptions
+  <span class="kw">WHERE</span> plan = <span class="str">'Premium'</span>
+)
+<span class="kw">SELECT</span> name <span class="kw">FROM</span> users
+<span class="kw">WHERE</span> user_id <span class="kw">IN</span>
+  (<span class="kw">SELECT</span> user_id <span class="kw">FROM</span> premium);</pre></div>
+          </div>
+          <div class="pg-item">
+            <h4>2 · Chained CTEs</h4>
+            <div class="code-block"><pre><span class="kw">WITH</span> done <span class="kw">AS</span> (
+  <span class="kw">SELECT</span> user_id <span class="kw">FROM</span> watch_history
+  <span class="kw">WHERE</span> completed = <span class="kw">TRUE</span>
+),
+prem <span class="kw">AS</span> (
+  <span class="kw">SELECT</span> user_id <span class="kw">FROM</span> subscriptions
+  <span class="kw">WHERE</span> plan = <span class="str">'Premium'</span>
+)
+<span class="kw">SELECT</span> name <span class="kw">FROM</span> users
+<span class="kw">WHERE</span> user_id <span class="kw">IN</span> (<span class="kw">SELECT</span> user_id <span class="kw">FROM</span> done)
+  <span class="kw">AND</span> user_id <span class="kw">IN</span> (<span class="kw">SELECT</span> user_id <span class="kw">FROM</span> prem);</pre></div>
+          </div>
+          <div class="pg-item">
+            <h4>3 · CTE with Aggregation</h4>
+            <div class="code-block"><pre><span class="kw">WITH</span> totals <span class="kw">AS</span> (
+  <span class="kw">SELECT</span> user_id,
+    <span class="fn">SUM</span>(minutes_watched) <span class="kw">AS</span> total_m
+  <span class="kw">FROM</span> watch_history
+  <span class="kw">GROUP BY</span> user_id
+)
+<span class="kw">SELECT</span> u.name, t.total_m
+<span class="kw">FROM</span> users u
+<span class="kw">JOIN</span> totals t <span class="kw">ON</span> u.user_id = t.user_id;</pre></div>
+          </div>
+          <div class="pg-item">
+            <h4>4 · CTE feeding JOIN</h4>
+            <div class="code-block"><pre><span class="kw">WITH</span> active <span class="kw">AS</span> (
+  <span class="kw">SELECT</span> user_id, plan
+  <span class="kw">FROM</span> subscriptions
+  <span class="kw">WHERE</span> active = <span class="kw">TRUE</span>
+)
+<span class="kw">SELECT</span> u.name, a.plan
+<span class="kw">FROM</span> users u
+<span class="kw">JOIN</span> active a <span class="kw">ON</span> u.user_id = a.user_id;</pre></div>
+          </div>
+          <div class="pg-item">
+            <h4>5 · CTE with HAVING</h4>
+            <div class="code-block"><pre><span class="kw">WITH</span> wc <span class="kw">AS</span> (
+  <span class="kw">SELECT</span> user_id,
+    <span class="fn">COUNT</span>(*) <span class="kw">AS</span> total
+  <span class="kw">FROM</span> watch_history
+  <span class="kw">GROUP BY</span> user_id
+  <span class="kw">HAVING</span> <span class="fn">COUNT</span>(*) &gt; <span class="num">1</span>
+)
+<span class="kw">SELECT</span> u.name, wc.total
+<span class="kw">FROM</span> users u
+<span class="kw">JOIN</span> wc <span class="kw">ON</span> u.user_id = wc.user_id;</pre></div>
+          </div>
+        </div>
+      </div>
+      <div class="sr-wrap">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="src" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="src" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- WINDOW FUNCTION PATTERNS -->
+    <article class="rc wide">
+      <div class="rc-head">
+        <div class="rc-n">16</div>
+        <div>
+          <div class="rc-title">Window Functions — 5 Patterns to Know</div>
+          <div class="rc-tag tag-win">Window Patterns</div>
+        </div>
+      </div>
+      <div class="rc-body">
+        <div class="pattern-grid">
+          <div class="pg-item">
+            <h4>1 · RANK() with ties skipping</h4>
+            <div class="code-block"><pre><span class="fn">RANK</span>() <span class="kw">OVER</span> (
+  <span class="kw">ORDER BY</span> <span class="fn">SUM</span>(minutes_watched) <span class="kw">DESC</span>
+) <span class="kw">AS</span> rank</pre></div>
+          </div>
+          <div class="pg-item">
+            <h4>2 · DENSE_RANK() no skipping</h4>
+            <div class="code-block"><pre><span class="fn">DENSE_RANK</span>() <span class="kw">OVER</span> (
+  <span class="kw">ORDER BY</span> <span class="fn">SUM</span>(minutes_watched) <span class="kw">DESC</span>
+) <span class="kw">AS</span> dense_rank</pre></div>
+          </div>
+          <div class="pg-item">
+            <h4>3 · ROW_NUMBER() per partition</h4>
+            <div class="code-block"><pre><span class="fn">ROW_NUMBER</span>() <span class="kw">OVER</span> (
+  <span class="kw">PARTITION BY</span> user_id
+  <span class="kw">ORDER BY</span> watched_on <span class="kw">DESC</span>
+) <span class="kw">AS</span> watch_num</pre></div>
+          </div>
+          <div class="pg-item">
+            <h4>4 · SUM() running total</h4>
+            <div class="code-block"><pre><span class="fn">SUM</span>(minutes_watched) <span class="kw">OVER</span> (
+  <span class="kw">PARTITION BY</span> user_id
+  <span class="kw">ORDER BY</span> watched_on
+) <span class="kw">AS</span> running_total</pre></div>
+          </div>
+          <div class="pg-item">
+            <h4>5 · AVG() vs individual row</h4>
+            <div class="code-block"><pre><span class="fn">AVG</span>(minutes_watched) <span class="kw">OVER</span> (
+  <span class="kw">PARTITION BY</span> user_id
+) <span class="kw">AS</span> avg_per_user</pre></div>
+          </div>
+        </div>
+      </div>
+      <div class="sr-wrap">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="src" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="src" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- JOIN PATTERNS -->
+    <article class="rc wide">
+      <div class="rc-head">
+        <div class="rc-n">17</div>
+        <div>
+          <div class="rc-title">JOIN Styles — 5 Patterns to Know</div>
+          <div class="rc-tag tag-join">JOIN Patterns</div>
+        </div>
+      </div>
+      <div class="rc-body">
+        <div class="pattern-grid">
+          <div class="pg-item">
+            <h4>1 · Basic INNER JOIN</h4>
+            <div class="code-block"><pre><span class="kw">SELECT</span> u.name, s.plan
+<span class="kw">FROM</span> users u
+<span class="kw">JOIN</span> subscriptions s
+  <span class="kw">ON</span> u.user_id = s.user_id;</pre></div>
+          </div>
+          <div class="pg-item">
+            <h4>2 · LEFT JOIN — keep all left</h4>
+            <div class="code-block"><pre><span class="kw">SELECT</span> u.name, s.plan
+<span class="kw">FROM</span> users u
+<span class="kw">LEFT JOIN</span> subscriptions s
+  <span class="kw">ON</span> u.user_id = s.user_id;</pre></div>
+          </div>
+          <div class="pg-item">
+            <h4>3 · 3-Table JOIN (bridge)</h4>
+            <div class="code-block"><pre><span class="kw">SELECT</span> u.name, s.title, w.watched_on
+<span class="kw">FROM</span> watch_history w
+<span class="kw">JOIN</span> users u  <span class="kw">ON</span> w.user_id = u.user_id
+<span class="kw">JOIN</span> shows s  <span class="kw">ON</span> w.show_id = s.show_id;</pre></div>
+          </div>
+          <div class="pg-item">
+            <h4>4 · JOIN + aggregate</h4>
+            <div class="code-block"><pre><span class="kw">SELECT</span> u.name,
+  <span class="fn">COUNT</span>(w.watch_id) <span class="kw">AS</span> total
+<span class="kw">FROM</span> users u
+<span class="kw">JOIN</span> watch_history w
+  <span class="kw">ON</span> u.user_id = w.user_id
+<span class="kw">GROUP BY</span> u.name;</pre></div>
+          </div>
+          <div class="pg-item">
+            <h4>5 · Anti-JOIN pattern</h4>
+            <div class="code-block"><pre><span class="cm">-- Users with NO subscription</span>
+<span class="kw">SELECT</span> u.name
+<span class="kw">FROM</span> users u
+<span class="kw">LEFT JOIN</span> subscriptions s
+  <span class="kw">ON</span> u.user_id = s.user_id
+<span class="kw">WHERE</span> s.user_id <span class="kw">IS NULL</span>;</pre></div>
+          </div>
+        </div>
+      </div>
+      <div class="sr-wrap">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="src" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="src" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- SUBQUERY PATTERNS -->
+    <article class="rc wide">
+      <div class="rc-head">
+        <div class="rc-n">18</div>
+        <div>
+          <div class="rc-title">Subquery Styles — 5 Patterns to Know</div>
+          <div class="rc-tag tag-sub">Subquery Patterns</div>
+        </div>
+      </div>
+      <div class="rc-body">
+        <div class="pattern-grid">
+          <div class="pg-item">
+            <h4>1 · IN subquery</h4>
+            <div class="code-block"><pre><span class="kw">SELECT</span> name <span class="kw">FROM</span> users
+<span class="kw">WHERE</span> user_id <span class="kw">IN</span> (
+  <span class="kw">SELECT</span> user_id
+  <span class="kw">FROM</span> watch_history
+  <span class="kw">WHERE</span> completed = <span class="kw">TRUE</span>
+);</pre></div>
+          </div>
+          <div class="pg-item">
+            <h4>2 · NOT IN subquery</h4>
+            <div class="code-block"><pre><span class="kw">SELECT</span> name <span class="kw">FROM</span> users
+<span class="kw">WHERE</span> user_id <span class="kw">NOT IN</span> (
+  <span class="kw">SELECT</span> user_id
+  <span class="kw">FROM</span> watch_history
+  <span class="kw">WHERE</span> completed = <span class="kw">TRUE</span>
+);</pre></div>
+          </div>
+          <div class="pg-item">
+            <h4>3 · Scalar subquery in SELECT</h4>
+            <div class="code-block"><pre><span class="kw">SELECT</span> name,
+  (<span class="kw">SELECT</span> <span class="fn">COUNT</span>(*)
+   <span class="kw">FROM</span> watch_history w
+   <span class="kw">WHERE</span> w.user_id = u.user_id
+  ) <span class="kw">AS</span> total_watches
+<span class="kw">FROM</span> users u;</pre></div>
+          </div>
+          <div class="pg-item">
+            <h4>4 · Subquery in FROM</h4>
+            <div class="code-block"><pre><span class="kw">SELECT</span> sub.user_id, sub.total
+<span class="kw">FROM</span> (
+  <span class="kw">SELECT</span> user_id,
+    <span class="fn">SUM</span>(minutes_watched) <span class="kw">AS</span> total
+  <span class="kw">FROM</span> watch_history
+  <span class="kw">GROUP BY</span> user_id
+) <span class="kw">AS</span> sub
+<span class="kw">WHERE</span> sub.total &gt; <span class="num">50</span>;</pre></div>
+          </div>
+          <div class="pg-item">
+            <h4>5 · EXISTS (correlated)</h4>
+            <div class="code-block"><pre><span class="kw">SELECT</span> name <span class="kw">FROM</span> users u
+<span class="kw">WHERE</span> <span class="kw">EXISTS</span> (
+  <span class="kw">SELECT</span> <span class="num">1</span>
+  <span class="kw">FROM</span> subscriptions s
+  <span class="kw">WHERE</span> s.user_id = u.user_id
+    <span class="kw">AND</span> s.plan = <span class="str">'Premium'</span>
+);</pre></div>
+          </div>
+        </div>
+      </div>
+      <div class="sr-wrap">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="src" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="src" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- GROUP BY PATTERNS -->
+    <article class="rc wide">
+      <div class="rc-head">
+        <div class="rc-n">19</div>
+        <div>
+          <div class="rc-title">GROUP BY + Aggregates — 5 Patterns to Know</div>
+          <div class="rc-tag tag-grp">Aggregate Patterns</div>
+        </div>
+      </div>
+      <div class="rc-body">
+        <div class="pattern-grid">
+          <div class="pg-item">
+            <h4>1 · COUNT</h4>
+            <div class="code-block"><pre><span class="kw">SELECT</span> user_id,
+  <span class="fn">COUNT</span>(*) <span class="kw">AS</span> total_watches
+<span class="kw">FROM</span> watch_history
+<span class="kw">GROUP BY</span> user_id;</pre></div>
+          </div>
+          <div class="pg-item">
+            <h4>2 · SUM</h4>
+            <div class="code-block"><pre><span class="kw">SELECT</span> user_id,
+  <span class="fn">SUM</span>(minutes_watched) <span class="kw">AS</span> total_mins
+<span class="kw">FROM</span> watch_history
+<span class="kw">GROUP BY</span> user_id;</pre></div>
+          </div>
+          <div class="pg-item">
+            <h4>3 · AVG by genre</h4>
+            <div class="code-block"><pre><span class="kw">SELECT</span> genre,
+  <span class="fn">AVG</span>(rating) <span class="kw">AS</span> avg_rating
+<span class="kw">FROM</span> shows
+<span class="kw">GROUP BY</span> genre;</pre></div>
+          </div>
+          <div class="pg-item">
+            <h4>4 · MIN + MAX</h4>
+            <div class="code-block"><pre><span class="kw">SELECT</span> genre,
+  <span class="fn">MIN</span>(rating) <span class="kw">AS</span> lowest,
+  <span class="fn">MAX</span>(rating) <span class="kw">AS</span> highest
+<span class="kw">FROM</span> shows
+<span class="kw">GROUP BY</span> genre;</pre></div>
+          </div>
+          <div class="pg-item">
+            <h4>5 · COUNT + HAVING</h4>
+            <div class="code-block"><pre><span class="kw">SELECT</span> show_id,
+  <span class="fn">COUNT</span>(*) <span class="kw">AS</span> times_watched
+<span class="kw">FROM</span> watch_history
+<span class="kw">GROUP BY</span> show_id
+<span class="kw">HAVING</span> <span class="fn">COUNT</span>(*) &gt; <span class="num">1</span>
+<span class="kw">ORDER BY</span> times_watched <span class="kw">DESC</span>;</pre></div>
+          </div>
+        </div>
+      </div>
+      <div class="sr-wrap">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="src" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="src" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- MASTER CHEAT CARD -->
+    <article class="rc wide">
+      <div class="rc-head">
+        <div class="rc-n">20</div>
+        <div>
+          <div class="rc-title">Master Recall Card — Interview Quick Reference</div>
+          <div class="rc-tag tag-pat">Master Card</div>
+        </div>
+      </div>
+      <div class="rc-body">
+        <div class="hook">"This card is the one to review the morning of the interview. All the 'gotchas' in one place."</div>
+        <table class="cmp-table">
+          <tr><th>Concept</th><th>The Gotcha</th><th>The Fix</th></tr>
+          <tr><td>NULL check</td><td><code>= NULL</code> always false</td><td><code>IS NULL</code></td></tr>
+          <tr><td>Clause order</td><td>WHERE after GROUP BY</td><td>WHERE → GROUP BY → HAVING</td></tr>
+          <tr><td>HAVING</td><td>Using WHERE for aggregates</td><td>Use HAVING after GROUP BY</td></tr>
+          <tr><td>JOIN bridge</td><td>Joining wrong table</td><td>Trace FK — start at bridge table</td></tr>
+          <tr><td>NOT IN + NULL</td><td>Silent empty result</td><td>Use NOT EXISTS instead</td></tr>
+          <tr><td>RANK vs DENSE</td><td>Confusing skip behavior</td><td>RANK skips, DENSE_RANK doesn't</td></tr>
+          <tr><td>ORDER BY</td><td>Forgetting after sorting question</td><td>"sorted" = always add ORDER BY</td></tr>
+          <tr><td>Number quotes</td><td><code>rating &gt; '8.0'</code></td><td><code>rating &gt; 8.0</code> — no quotes on numbers</td></tr>
+        </table>
+        <div class="keys"><span class="kc">IS NULL</span><span class="kc">WHERE→GROUP BY→HAVING</span><span class="kc">bridge table</span><span class="kc">RANK vs DENSE_RANK</span></div>
+      </div>
+      <div class="sr-wrap">
+        <div class="sr-label">Spaced Repeat</div>
+        <div class="sr-chips">
+          <span class="src" onclick="this.classList.toggle('done')">1 day</span>
+          <span class="src" onclick="this.classList.toggle('done')">3 days</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 week</span>
+          <span class="src" onclick="this.classList.toggle('done')">1 month</span>
+        </div>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<div class="pq">
+  <blockquote>"SQL is not about memorizing syntax — it's about building a mental model of how data flows through each clause. Master the model; the syntax follows."</blockquote>
+  <cite>Chapter 8 — Final Insight</cite>
+</div>
+
 <footer>
-  <p><strong>Snowflake &amp; Data Warehouse Recall Magazine</strong></p>
-  <p style="margin-top:0.5rem;">26 cards · 6 chapters · May 2026 Edition · Created with recall-magazine skill</p>
+  <p><strong>SQL Mastery — Streaming Service Recall Magazine</strong></p>
+  <p style="margin-top:0.4rem;">20 cards · 8 chapters · 25 query patterns · May 2026 Edition</p>
 </footer>
 
 <script>
   // Loader
   window.addEventListener('load', () => {
-    setTimeout(() => document.getElementById('loader').classList.add('hidden'), 600);
+    setTimeout(() => document.getElementById('loader').classList.add('hidden'), 700);
   });
 
-  // Intersection Observer for card reveal
+  // Intersection Observer reveal
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry, i) => {
       if (entry.isIntersecting) {
-        setTimeout(() => entry.target.classList.add('visible'), i * 80);
+        setTimeout(() => entry.target.classList.add('vis'), i * 70);
         observer.unobserve(entry.target);
       }
     });
-  }, { threshold: 0.08 });
-  document.querySelectorAll('.rcard').forEach(card => observer.observe(card));
+  }, { threshold: 0.06 });
+  document.querySelectorAll('.rc').forEach(c => observer.observe(c));
 
-  // Active nav highlighting
+  // Active nav
   const sections = document.querySelectorAll('section[id]');
-  const navLinks = document.querySelectorAll('nav a.section-link');
-  const scrollObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
+  const navLinks = document.querySelectorAll('nav a.sl');
+  new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
         navLinks.forEach(l => l.classList.remove('active'));
-        const active = document.querySelector(`nav a[href="#${entry.target.id}"]`);
-        if (active) active.classList.add('active');
+        const a = document.querySelector(`nav a[href="#${e.target.id}"]`);
+        if (a) a.classList.add('active');
       }
     });
-  }, { rootMargin: '-40% 0px -50% 0px' });
-  sections.forEach(s => scrollObserver.observe(s));
-
-  // History sidebar
-  let historyData = [];
-  try {
-    const resp = fetch('history.json').then(r => r.json()).then(data => {
-      historyData = data;
-      const list = document.getElementById('history-list');
-      if (!data.length) { list.innerHTML = '<p style="color:#aaa;font-size:12px;">No past issues yet.</p>'; return; }
-      [...data].reverse().forEach(item => {
-        list.innerHTML += `<div class="history-item"><a href="previous_news/${item.filename}">${item.title}</a><span>${item.date}</span></div>`;
+  }, { rootMargin: '-35% 0px -50% 0px' }).observe && sections.forEach(s =>
+    new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          navLinks.forEach(l => l.classList.remove('active'));
+          const a = document.querySelector(`nav a[href="#${e.target.id}"]`);
+          if (a) a.classList.add('active');
+        }
       });
-    }).catch(() => {
-      document.getElementById('history-list').innerHTML = '<p style="color:#aaa;font-size:12px;">No past issues found.</p>';
-    });
-  } catch(e) {}
+    }, { rootMargin: '-35% 0px -50% 0px' }).observe(s)
+  );
+
+  // History sidebar (inline JSON)
+  const historyData = [{"title":"Python File Handling","date":"2026-05-13","time":"21-18-18","filename":"python_file_handling2026-05-13_21-18-18.html","sections":1},{"title":"Snowflake & Data Warehouse","date":"2026-05-13","time":"22-02-04","filename":"snowflake_data_warehouse_recall2026-05-13_22-02-04.html","sections":1}];
+  const list = document.getElementById('history-list');
+  if (!historyData.length) { list.innerHTML = '<p style="color:#aaa;font-size:12px;">No past issues yet.</p>'; }
+  else { [...historyData].reverse().forEach(item => { list.innerHTML += `<div class="history-item"><a href="previous_news/${item.filename}">${item.title}</a><span>${item.date}</span></div>`; }); }
 </script>
 </body>
 </html>
